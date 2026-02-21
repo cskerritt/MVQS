@@ -671,6 +671,308 @@ function setupSchema(db) {
       field_name TEXT,
       field_description TEXT
     );
+
+    -- ================================================================
+    -- Gap-closure Phase 2: All remaining Access lookup tables
+    -- ================================================================
+
+    -- HIGH PRIORITY: Work Values Assessment System
+    CREATE TABLE value_answers (
+      value INTEGER PRIMARY KEY,
+      label TEXT,
+      count INTEGER
+    );
+
+    CREATE TABLE value_categories (
+      category_id INTEGER PRIMARY KEY,
+      category TEXT,
+      sort_order INTEGER
+    );
+
+    CREATE TABLE value_options (
+      option_id INTEGER PRIMARY KEY,
+      oc_values TEXT,
+      short_label TEXT,
+      description TEXT,
+      value REAL,
+      label TEXT,
+      desire TEXT
+    );
+
+    CREATE TABLE values_catalog (
+      value_id INTEGER PRIMARY KEY,
+      category_id INTEGER,
+      oc_values TEXT,
+      short_label TEXT,
+      description TEXT,
+      desire TEXT,
+      count INTEGER,
+      default_value INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER
+    );
+    CREATE INDEX idx_values_catalog_category ON values_catalog(category_id);
+
+    CREATE TABLE work_history_value_defaults (
+      id INTEGER PRIMARY KEY,
+      v01 INTEGER, v02 INTEGER, v03 INTEGER, v04 INTEGER, v05 INTEGER,
+      v06 INTEGER, v07 INTEGER, v08 INTEGER, v09 INTEGER, v10 INTEGER,
+      v11 INTEGER, v12 INTEGER, v13 INTEGER, v14 INTEGER, v15 INTEGER,
+      v16 INTEGER, v17 INTEGER, v18 INTEGER, v19 INTEGER, v20 INTEGER,
+      v21 INTEGER
+    );
+
+    -- HIGH PRIORITY: VIPR Personality Assessment
+    CREATE TABLE vipr_test_pairs (
+      vipr_test_pair_id INTEGER PRIMARY KEY,
+      test_number INTEGER,
+      dot_code_1 TEXT,
+      title_1 TEXT,
+      dot_code_2 TEXT,
+      title_2 TEXT,
+      selection INTEGER,
+      indicator_1 TEXT,
+      indicator_2 TEXT,
+      e_score TEXT,
+      i_score TEXT,
+      s_score TEXT,
+      n_score TEXT,
+      t_score TEXT,
+      f_score TEXT,
+      j_score TEXT,
+      p_score TEXT,
+      default_pair INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER
+    );
+    CREATE INDEX idx_vipr_test_pairs_test ON vipr_test_pairs(test_number);
+
+    -- MEDIUM PRIORITY: Personality Types
+    CREATE TABLE personality_types (
+      personality_type TEXT PRIMARY KEY,
+      personality_name TEXT,
+      personality_description TEXT,
+      job_descriptions TEXT,
+      sort_order INTEGER
+    );
+
+    CREATE TABLE personality_type_indicators (
+      indicator_id INTEGER PRIMARY KEY,
+      indicator TEXT,
+      indicator_description TEXT,
+      sort_order INTEGER
+    );
+
+    -- MEDIUM PRIORITY: Test Score Conversion Tables
+    CREATE TABLE score_scales (
+      standard REAL PRIMARY KEY,
+      percentile REAL,
+      ged_effect REAL,
+      apt_effect REAL
+    );
+
+    CREATE TABLE score_percentiles (
+      percentile REAL PRIMARY KEY,
+      standard REAL
+    );
+
+    -- MEDIUM PRIORITY: VIPR Job Descriptions
+    CREATE TABLE vipr_job_descriptions (
+      dot_code TEXT PRIMARY KEY,
+      job_description TEXT
+    );
+
+    -- MEDIUM PRIORITY: Occupation Details (rich narratives)
+    CREATE TABLE occupation_details (
+      title_record_number INTEGER PRIMARY KEY,
+      doc_no TEXT,
+      dot_code TEXT,
+      dot_code_11 TEXT,
+      title TEXT,
+      dot_title_2 TEXT,
+      oes_code TEXT,
+      oes_title TEXT,
+      ou_code TEXT,
+      ou_title TEXT,
+      cat TEXT,
+      category TEXT,
+      div TEXT,
+      division TEXT,
+      grp TEXT,
+      grp_name TEXT,
+      goe_ia TEXT,
+      goe_ia_title TEXT,
+      holland_title TEXT,
+      oap TEXT,
+      goe_wg TEXT,
+      oap_goe_wg_title TEXT,
+      data_oap TEXT,
+      gatb_oap TEXT,
+      oap2 TEXT,
+      data_oap2 TEXT,
+      gatb_oap2 TEXT,
+      goe_06 TEXT,
+      sic TEXT,
+      sic_title TEXT,
+      soc TEXT,
+      soc_title TEXT,
+      cen TEXT,
+      cen_title TEXT,
+      mps TEXT,
+      mps_title TEXT,
+      mps2 TEXT,
+      mps2_title TEXT,
+      mps3 TEXT,
+      mps3_title TEXT,
+      wf1 TEXT,
+      wf1_title TEXT,
+      wf2 TEXT,
+      wf3 TEXT,
+      update_gov TEXT,
+      update_field TEXT,
+      vq REAL,
+      data_level TEXT,
+      data_vi TEXT,
+      d_function TEXT,
+      people_level TEXT,
+      people_vi TEXT,
+      p_function TEXT,
+      things_level TEXT,
+      things_vi TEXT,
+      t_function TEXT,
+      svp TEXT,
+      svp_length TEXT,
+      ptr TEXT
+    );
+    CREATE INDEX idx_occupation_details_dot ON occupation_details(dot_code);
+    CREATE INDEX idx_occupation_details_oes ON occupation_details(oes_code);
+
+    -- MEDIUM PRIORITY: Alternate Titles
+    CREATE TABLE occupation_alternate_titles (
+      title_record_number INTEGER,
+      doc_no TEXT,
+      alternate_title TEXT
+    );
+    CREATE INDEX idx_alt_titles_doc ON occupation_alternate_titles(doc_no);
+    CREATE INDEX idx_alt_titles_title ON occupation_alternate_titles(alternate_title);
+
+    -- MEDIUM PRIORITY: TEM/JOLT (Temperament + Labor Market)
+    CREATE TABLE occupation_tem_jolt (
+      title_record_number INTEGER PRIMARY KEY,
+      record_num REAL,
+      doc_no REAL,
+      stem_rec REAL,
+      dot_code TEXT,
+      dot_title TEXT,
+      dot_code_11 TEXT,
+      dot_title_orig TEXT,
+      tem_dir REAL,
+      tem_rep REAL,
+      tem_inf REAL,
+      tem_var REAL,
+      tem_exp REAL,
+      tem_alo REAL,
+      tem_str REAL,
+      tem_tol REAL,
+      tem_und REAL,
+      tem_peo REAL,
+      tem_jud REAL,
+      js99_yearly_open REAL,
+      jolt99_yearly_open REAL,
+      soc99_cur_emp REAL,
+      js05_yearly_open REAL,
+      jolt05_yearly_open REAL,
+      soc05_cur_emp REAL
+    );
+    CREATE INDEX idx_tem_jolt_dot ON occupation_tem_jolt(dot_code);
+
+    -- MEDIUM PRIORITY: DOT Education/Training Crosswalk
+    CREATE TABLE dot_education (
+      dot_id INTEGER PRIMARY KEY,
+      title_record_number INTEGER,
+      doc_no INTEGER,
+      dot_code TEXT,
+      dot_title TEXT,
+      caspar_adc TEXT,
+      caspar_title TEXT,
+      cadc_cip90 TEXT,
+      cadc_cip_title TEXT,
+      cip90 TEXT,
+      cip90_title TEXT
+    );
+    CREATE INDEX idx_dot_education_code ON dot_education(dot_code);
+
+    -- MEDIUM PRIORITY: CASPAR Education Programs
+    CREATE TABLE occupation_caspar (
+      title_record_number INTEGER,
+      doc_no INTEGER,
+      dot_code TEXT,
+      dot_title TEXT,
+      caspar_adc TEXT,
+      caspar_title TEXT,
+      cadc_cip90 TEXT,
+      cadc_cip_title TEXT,
+      cip90 TEXT,
+      cip90_title TEXT
+    );
+    CREATE INDEX idx_caspar_dot ON occupation_caspar(dot_code);
+
+    -- MEDIUM PRIORITY: Ratings (trait rating guidelines)
+    CREATE TABLE ratings (
+      rating_id INTEGER PRIMARY KEY,
+      rating_name TEXT,
+      variable_number TEXT,
+      guidelines TEXT,
+      default_rating INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER
+    );
+
+    -- LOW PRIORITY: Level Description Lookups
+    CREATE TABLE svp_levels (
+      svp_level INTEGER PRIMARY KEY,
+      svp_description TEXT,
+      svp_skill TEXT
+    );
+
+    CREATE TABLE strength_levels (
+      strength_level INTEGER PRIMARY KEY,
+      strength_description TEXT,
+      strength_percentile TEXT
+    );
+
+    CREATE TABLE weather_levels (
+      weather_level INTEGER PRIMARY KEY,
+      weather_description TEXT,
+      weather_percentile TEXT
+    );
+
+    CREATE TABLE physical_environmental_levels (
+      physical_level INTEGER PRIMARY KEY,
+      physical_description TEXT,
+      physical_percentile TEXT
+    );
+
+    CREATE TABLE zone_levels (
+      zone_level INTEGER PRIMARY KEY,
+      zone_description TEXT
+    );
+
+    CREATE TABLE onet_codes (
+      onet_code TEXT,
+      onet_title TEXT,
+      onet_category TEXT,
+      count INTEGER
+    );
+    CREATE INDEX idx_onet_codes_code ON onet_codes(onet_code);
+
+    CREATE TABLE countries (
+      country_id INTEGER PRIMARY KEY,
+      country TEXT
+    );
+
+    CREATE TABLE person_job_traits (
+      trait_category_code TEXT PRIMARY KEY,
+      trait_category TEXT,
+      sort_order INTEGER
+    );
   `);
 }
 
@@ -1563,6 +1865,378 @@ function importDc(db, legacyDir, requestedStatesSet) {
   }
 
   console.log('Gap-closure reference imports complete.');
+
+  // ================================================================
+  // Gap-closure Phase 2: All remaining Access lookup tables
+  // ================================================================
+  console.log('\n--- Phase 2 Gap-Closure: Importing remaining Access lookup tables ---');
+
+  // --- HIGH PRIORITY: Work Values System ---
+  console.log('  Loading work values system...');
+
+  const valueAnswerRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Value_Answers'));
+  const insertValueAnswer = db.prepare('INSERT INTO value_answers (value, label, count) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of valueAnswerRows) {
+      insertValueAnswer.run(toInt(row.VALUE), safeTrim(row.LABEL), toInt(row.Count));
+    }
+  });
+  console.log(`  Imported ${valueAnswerRows.length} value answers.`);
+
+  const valueCatRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Value_Categories'));
+  const insertValueCat = db.prepare('INSERT INTO value_categories (category_id, category, sort_order) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of valueCatRows) {
+      insertValueCat.run(toInt(row.ValueCategoryID), safeTrim(row.ValueCategory), toInt(row.Sort_Order));
+    }
+  });
+  console.log(`  Imported ${valueCatRows.length} value categories.`);
+
+  const valueOptRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Value_Options'));
+  const insertValueOpt = db.prepare('INSERT INTO value_options (option_id, oc_values, short_label, description, value, label, desire) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of valueOptRows) {
+      insertValueOpt.run(
+        toInt(row.OCValueID), safeTrim(row.OCVALUES), safeTrim(row.SHORTLABEL),
+        safeTrim(row.DESCRIPT), toFloat(row.VALUE), safeTrim(row.LABEL), safeTrim(row.DESIRE)
+      );
+    }
+  });
+  console.log(`  Imported ${valueOptRows.length} value options.`);
+
+  const valuesRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Values'));
+  const insertValue = db.prepare('INSERT INTO values_catalog (value_id, category_id, oc_values, short_label, description, desire, count, default_value, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of valuesRows) {
+      insertValue.run(
+        toInt(row.ValueID), toInt(row.ValueCategoryID), safeTrim(row.OCVALUES),
+        safeTrim(row.SHORTLABEL), safeTrim(row.DESCRIPT), safeTrim(row.DESIRE),
+        toInt(row.Count), toInt(row.Default_Value) ?? 0, toInt(row.Sort_Order)
+      );
+    }
+  });
+  console.log(`  Imported ${valuesRows.length} values catalog entries.`);
+
+  const whvdRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Work_History_Value_Defaults'));
+  const insertWhvd = db.prepare(`INSERT INTO work_history_value_defaults (
+    id, v01, v02, v03, v04, v05, v06, v07, v08, v09, v10,
+    v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  withTransaction(db, () => {
+    let rowId = 1;
+    for (const row of whvdRows) {
+      insertWhvd.run(
+        rowId++,
+        toInt(row.V01en00m), toInt(row.V02en00m), toInt(row.V03en00m), toInt(row.V04en00m),
+        toInt(row.V05en00m), toInt(row.V06en00m), toInt(row.V07en00m), toInt(row.V08en00m),
+        toInt(row.V09en00m), toInt(row.V10en00m), toInt(row.V11en00m), toInt(row.V12en00m),
+        toInt(row.V13en00m), toInt(row.V14en00m), toInt(row.V15en00m), toInt(row.V16en00m),
+        toInt(row.V17en00m), toInt(row.V18en00m), toInt(row.V19en00m), toInt(row.V20en00m),
+        toInt(row.V21en00m)
+      );
+    }
+  });
+  console.log(`  Imported ${whvdRows.length} work history value defaults.`);
+
+  // --- HIGH PRIORITY: VIPR Test Pairs ---
+  console.log('  Loading VIPR test pairs...');
+  const viprRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_VIPR_Test_Pairs'));
+  const insertVipr = db.prepare(`INSERT INTO vipr_test_pairs (
+    vipr_test_pair_id, test_number, dot_code_1, title_1, dot_code_2, title_2,
+    selection, indicator_1, indicator_2,
+    e_score, i_score, s_score, n_score, t_score, f_score, j_score, p_score,
+    default_pair, sort_order
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  withTransaction(db, () => {
+    for (const row of viprRows) {
+      insertVipr.run(
+        toInt(row.VIPR_Test_Pair_ID), toInt(row.TestNumber),
+        safeTrim(row.DOTCODE1), safeTrim(row.Title1),
+        safeTrim(row.DOTCODE2), safeTrim(row.Title2),
+        toInt(row.Selection),
+        safeTrim(row.Indicator1), safeTrim(row.Indicator2),
+        safeTrim(row.EScore), safeTrim(row.IScore),
+        safeTrim(row.Sscore), safeTrim(row.NScore),
+        safeTrim(row.Tscore), safeTrim(row.FScore),
+        safeTrim(row.JScore), safeTrim(row.PScore),
+        toInt(row.Default_Pair) ?? 0, toInt(row.Sort_Order)
+      );
+    }
+  });
+  console.log(`  Imported ${viprRows.length} VIPR test pairs.`);
+
+  // --- MEDIUM PRIORITY: Personality Types ---
+  console.log('  Loading personality types...');
+  const ptRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Personality_Types'));
+  const insertPt = db.prepare('INSERT INTO personality_types (personality_type, personality_name, personality_description, job_descriptions, sort_order) VALUES (?, ?, ?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of ptRows) {
+      insertPt.run(
+        safeTrim(row.Personality_Type), safeTrim(row.Personality_Name),
+        safeTrim(row.Personality_Type_Description), safeTrim(row.JobDescripts),
+        toInt(row.Sort_Order)
+      );
+    }
+  });
+  console.log(`  Imported ${ptRows.length} personality types.`);
+
+  const ptiRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Personality_Type_Indicators'));
+  const insertPti = db.prepare('INSERT INTO personality_type_indicators (indicator_id, indicator, indicator_description, sort_order) VALUES (?, ?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of ptiRows) {
+      insertPti.run(
+        toInt(row.Personality_Type_Indicator_ID), safeTrim(row.Personality_Type_Indicator),
+        safeTrim(row.Personality_Type_Indicator_Description), toInt(row.Sort_Order)
+      );
+    }
+  });
+  console.log(`  Imported ${ptiRows.length} personality type indicators.`);
+
+  // --- MEDIUM PRIORITY: Test Score Conversion Tables ---
+  console.log('  Loading score scales and percentiles...');
+  const scaleRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_SCALES'));
+  const insertScale = db.prepare('INSERT INTO score_scales (standard, percentile, ged_effect, apt_effect) VALUES (?, ?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of scaleRows) {
+      insertScale.run(toFloat(row.Standard), toFloat(row.Percentile), toFloat(row.GEDEffect), toFloat(row.APTEffect));
+    }
+  });
+  console.log(`  Imported ${scaleRows.length} score scale entries.`);
+
+  const scoreRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_SCORES'));
+  const insertScore = db.prepare('INSERT INTO score_percentiles (percentile, standard) VALUES (?, ?)');
+  withTransaction(db, () => {
+    for (const row of scoreRows) {
+      insertScore.run(toFloat(row.Percentile), toFloat(row.Standard));
+    }
+  });
+  console.log(`  Imported ${scoreRows.length} score percentile entries.`);
+
+  // --- MEDIUM PRIORITY: VIPR Job Descriptions ---
+  console.log('  Loading VIPR job descriptions...');
+  const viprJdRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_VIPR_Job_Descriptions'));
+  const insertViprJd = db.prepare('INSERT INTO vipr_job_descriptions (dot_code, job_description) VALUES (?, ?)');
+  withTransaction(db, () => {
+    for (const row of viprJdRows) {
+      insertViprJd.run(safeTrim(row.DOTCODE09), safeTrim(row.JOBDESC));
+    }
+  });
+  console.log(`  Imported ${viprJdRows.length} VIPR job descriptions.`);
+
+  // --- MEDIUM PRIORITY: Occupation Details ---
+  console.log('  Loading occupation details...');
+  const occDetRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Occupation_Details'));
+  const insertOccDet = db.prepare(`INSERT INTO occupation_details (
+    title_record_number, doc_no, dot_code, dot_code_11, title, dot_title_2,
+    oes_code, oes_title, ou_code, ou_title, cat, category, div, division,
+    grp, grp_name, goe_ia, goe_ia_title, holland_title,
+    oap, goe_wg, oap_goe_wg_title, data_oap, gatb_oap,
+    oap2, data_oap2, gatb_oap2, goe_06,
+    sic, sic_title, soc, soc_title, cen, cen_title,
+    mps, mps_title, mps2, mps2_title, mps3, mps3_title,
+    wf1, wf1_title, wf2, wf3, update_gov, update_field,
+    vq, data_level, data_vi, d_function,
+    people_level, people_vi, p_function,
+    things_level, things_vi, t_function, svp, svp_length, ptr
+  ) VALUES (${new Array(59).fill('?').join(',')})`);
+  withTransaction(db, () => {
+    for (const row of occDetRows) {
+      insertOccDet.run(
+        toInt(row.TitleRecordNumber), safeTrim(row['Doc no']), safeTrim(row.Dotcode),
+        safeTrim(row.Dotcode11), safeTrim(row.Title), safeTrim(row.Dottitle2),
+        safeTrim(row.Oescode), safeTrim(row.Oestitle), safeTrim(row.Oucode),
+        safeTrim(row.Outitle), safeTrim(row.Cat), safeTrim(row.Category),
+        safeTrim(row.Div), safeTrim(row.Division), safeTrim(row.Grp),
+        safeTrim(row.Group), safeTrim(row.Goeia), safeTrim(row.Goeiatitle),
+        safeTrim(row.Hollatitle), safeTrim(row.Oap), safeTrim(row.Goewg),
+        safeTrim(row.Oapgoewgti), safeTrim(row.Dataoap), safeTrim(row.Gatboap),
+        safeTrim(row.Oap2), safeTrim(row.Dataoap2), safeTrim(row.Gatboap2),
+        safeTrim(row.Goe06), safeTrim(row.Sic), safeTrim(row.Sictitle),
+        safeTrim(row.Soc), safeTrim(row.Soctitle), safeTrim(row.Cen),
+        safeTrim(row.Centitle), safeTrim(row.Mps), safeTrim(row.Mpstitle),
+        safeTrim(row.Mps2), safeTrim(row.Mps2title), safeTrim(row.Mps3),
+        safeTrim(row.Mps3title), safeTrim(row.Wf1), safeTrim(row.Wf1title),
+        safeTrim(row.Wf2), safeTrim(row.Wf3), safeTrim(row.Updategov),
+        safeTrim(row.Update), toFloat(row.Vq), safeTrim(row.Data),
+        safeTrim(row.Datavi), safeTrim(row.Dfunction),
+        safeTrim(row.People), safeTrim(row.Peoplevi), safeTrim(row.Pfunction),
+        safeTrim(row.Things), safeTrim(row.Thingsvi), safeTrim(row.Tfunction),
+        safeTrim(row.Svp), safeTrim(row.Svplenth), safeTrim(row.Ptr)
+      );
+    }
+  });
+  console.log(`  Imported ${occDetRows.length} occupation detail records.`);
+
+  // --- MEDIUM PRIORITY: Alternate Titles ---
+  console.log('  Loading alternate titles...');
+  const altTitleRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Occupations_Alternate_Titles'));
+  const insertAltTitle = db.prepare('INSERT INTO occupation_alternate_titles (title_record_number, doc_no, alternate_title) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of altTitleRows) {
+      insertAltTitle.run(toInt(row.TitleRecordNumber), safeTrim(row.Doc_No), safeTrim(row.Alternate_Title));
+    }
+  });
+  console.log(`  Imported ${altTitleRows.length} alternate titles.`);
+
+  // --- MEDIUM PRIORITY: TEM/JOLT ---
+  console.log('  Loading TEM/JOLT temperament and labor data...');
+  const temRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Occupations_TEM_JOLT'));
+  const insertTem = db.prepare(`INSERT INTO occupation_tem_jolt (
+    title_record_number, record_num, doc_no, stem_rec, dot_code, dot_title,
+    dot_code_11, dot_title_orig,
+    tem_dir, tem_rep, tem_inf, tem_var, tem_exp, tem_alo,
+    tem_str, tem_tol, tem_und, tem_peo, tem_jud,
+    js99_yearly_open, jolt99_yearly_open, soc99_cur_emp,
+    js05_yearly_open, jolt05_yearly_open, soc05_cur_emp
+  ) VALUES (${new Array(25).fill('?').join(',')})`);
+  withTransaction(db, () => {
+    for (const row of temRows) {
+      insertTem.run(
+        toInt(row.TitleRecordNumber) ?? toInt(toFloat(row.TitleRecordNumber)),
+        toFloat(row.Record), toFloat(row['Doc No']), toFloat(row.StemRec),
+        safeTrim(row.DOTCode09), safeTrim(row.DOTTitle2),
+        safeTrim(row.DOTCode11), safeTrim(row.DOTTitle),
+        toFloat(row.TEMDIR), toFloat(row.TEMREP), toFloat(row.TEMINF),
+        toFloat(row.TEMVAR), toFloat(row.TEMEXP), toFloat(row.TEMALO),
+        toFloat(row.TEMSTR), toFloat(row.TEMTOL), toFloat(row.TEMUND),
+        toFloat(row.TEMPEO), toFloat(row.TEMJUD),
+        toFloat(row.JS99YrlyOpen), toFloat(row.JOLT99YrlyOpen), toFloat(row.SOC99CurEmp),
+        toFloat(row.JS05YrlyOpen), toFloat(row.JOLT05YrlyOpen), toFloat(row.SOC05CurEmp)
+      );
+    }
+  });
+  console.log(`  Imported ${temRows.length} TEM/JOLT records.`);
+
+  // --- MEDIUM PRIORITY: DOT Education Crosswalk ---
+  console.log('  Loading DOT education crosswalk...');
+  const dotEduRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_DOT'));
+  const insertDotEdu = db.prepare(`INSERT INTO dot_education (
+    dot_id, title_record_number, doc_no, dot_code, dot_title,
+    caspar_adc, caspar_title, cadc_cip90, cadc_cip_title, cip90, cip90_title
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  withTransaction(db, () => {
+    for (const row of dotEduRows) {
+      insertDotEdu.run(
+        toInt(row.DOT_ID), toInt(row.TitleRecordNumber), toInt(row.DOC_NO),
+        safeTrim(row.DOTCODE09), safeTrim(row.DOTTITLE),
+        safeTrim(row.CASPARADC), safeTrim(row.CASPARTTL),
+        safeTrim(row.CADCCIP90), safeTrim(row.CADCCIPTTL),
+        safeTrim(row.CIP90), safeTrim(row.CIP90TTL)
+      );
+    }
+  });
+  console.log(`  Imported ${dotEduRows.length} DOT education crosswalk entries.`);
+
+  // --- MEDIUM PRIORITY: CASPAR Education Programs ---
+  console.log('  Loading CASPAR education programs...');
+  const casparRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Occupations_CASPAR'));
+  const insertCaspar = db.prepare(`INSERT INTO occupation_caspar (
+    title_record_number, doc_no, dot_code, dot_title,
+    caspar_adc, caspar_title, cadc_cip90, cadc_cip_title, cip90, cip90_title
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  withTransaction(db, () => {
+    for (const row of casparRows) {
+      insertCaspar.run(
+        toInt(row.TitleRecordNumber), toInt(row.DOC_NO),
+        safeTrim(row.DOTCODE09), safeTrim(row.DOTTITLE),
+        safeTrim(row.CASPARADC), safeTrim(row.CASPARTTL),
+        safeTrim(row.CADCCIP90), safeTrim(row.CADCCIPTTL),
+        safeTrim(row.CIP90), safeTrim(row.CIP90TTL)
+      );
+    }
+  });
+  console.log(`  Imported ${casparRows.length} CASPAR education records.`);
+
+  // --- MEDIUM PRIORITY: Ratings (trait guidelines) ---
+  console.log('  Loading ratings/trait guidelines...');
+  const ratingRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Ratings'));
+  const insertRating = db.prepare('INSERT INTO ratings (rating_id, rating_name, variable_number, guidelines, default_rating, sort_order) VALUES (?, ?, ?, ?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of ratingRows) {
+      insertRating.run(
+        toInt(row.RatingID), safeTrim(row.RatingName), safeTrim(row.VariableNumber),
+        safeTrim(row.Guidelines), toInt(row.Default_Ratings) ?? 0, toInt(row.Sort_Order)
+      );
+    }
+  });
+  console.log(`  Imported ${ratingRows.length} rating guidelines.`);
+
+  // --- LOW PRIORITY: Level Description Lookups ---
+  console.log('  Loading level description lookups...');
+
+  const svpLevelRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_SVPLevels'));
+  const insertSvpLevel = db.prepare('INSERT INTO svp_levels (svp_level, svp_description, svp_skill) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of svpLevelRows) {
+      insertSvpLevel.run(toInt(row.SVPLevel), safeTrim(row.SVPDescription), safeTrim(row.SVPSkill));
+    }
+  });
+  console.log(`  Imported ${svpLevelRows.length} SVP levels.`);
+
+  const strengthLevelRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_StrengthLevels'));
+  const insertStrengthLevel = db.prepare('INSERT INTO strength_levels (strength_level, strength_description, strength_percentile) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of strengthLevelRows) {
+      insertStrengthLevel.run(toInt(row.StrengthLevel), safeTrim(row.StrengthDescription), safeTrim(row.StrengthPercentile));
+    }
+  });
+  console.log(`  Imported ${strengthLevelRows.length} strength levels.`);
+
+  const weatherLevelRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_WeatherLevels'));
+  const insertWeatherLevel = db.prepare('INSERT INTO weather_levels (weather_level, weather_description, weather_percentile) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of weatherLevelRows) {
+      insertWeatherLevel.run(toInt(row.WeatherLevel), safeTrim(row.WeatherDescription), safeTrim(row.WeatherPercentile));
+    }
+  });
+  console.log(`  Imported ${weatherLevelRows.length} weather levels.`);
+
+  const physEnvRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_PhysicalEnvironmentalLevels'));
+  const insertPhysEnv = db.prepare('INSERT INTO physical_environmental_levels (physical_level, physical_description, physical_percentile) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of physEnvRows) {
+      insertPhysEnv.run(toInt(row.PhysicalLevel), safeTrim(row.PhysicalDescription), safeTrim(row.PhysicalPercentile));
+    }
+  });
+  console.log(`  Imported ${physEnvRows.length} physical/environmental levels.`);
+
+  const zoneLevelRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_ZoneLevels'));
+  const insertZoneLevel = db.prepare('INSERT INTO zone_levels (zone_level, zone_description) VALUES (?, ?)');
+  withTransaction(db, () => {
+    for (const row of zoneLevelRows) {
+      insertZoneLevel.run(toInt(row.ZoneLevel), safeTrim(row.ZoneDescription));
+    }
+  });
+  console.log(`  Imported ${zoneLevelRows.length} zone levels.`);
+
+  const onetCodeRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_ONET_Codes'));
+  const insertOnetCode = db.prepare('INSERT INTO onet_codes (onet_code, onet_title, onet_category, count) VALUES (?, ?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of onetCodeRows) {
+      insertOnetCode.run(safeTrim(row.ONETCODE), safeTrim(row.ONETTITLE), safeTrim(row.ONETCAT), toInt(row.Count));
+    }
+  });
+  console.log(`  Imported ${onetCodeRows.length} O*NET codes.`);
+
+  const countryRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Countries'));
+  const insertCountry = db.prepare('INSERT INTO countries (country_id, country) VALUES (?, ?)');
+  withTransaction(db, () => {
+    for (const row of countryRows) {
+      insertCountry.run(toInt(row.CountryID), safeTrim(row.Country));
+    }
+  });
+  console.log(`  Imported ${countryRows.length} countries.`);
+
+  const pjtRows = parseCsvRows(runMdbExport(dcDataPath, 'tblXLU_Person_Job_Traits'));
+  const insertPjt = db.prepare('INSERT INTO person_job_traits (trait_category_code, trait_category, sort_order) VALUES (?, ?, ?)');
+  withTransaction(db, () => {
+    for (const row of pjtRows) {
+      insertPjt.run(safeTrim(row.Trait_Category_Code), safeTrim(row.Trait_Category), toInt(row.Sort_Order));
+    }
+  });
+  console.log(`  Imported ${pjtRows.length} person-job trait categories.`);
+
+  console.log('Phase 2 gap-closure imports complete.\n');
 
   return {
     sourceMode: 'dc',

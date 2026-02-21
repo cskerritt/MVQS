@@ -7658,6 +7658,329 @@ app.get('/api/wages/fields', (req, res) => {
   return res.json({ fields: rows });
 });
 
+// ================================================================
+// Phase 2 Gap-Closure Endpoints
+// ================================================================
+
+// --- Work Values System ---
+app.get('/api/reference/values', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM values_catalog ORDER BY sort_order').all();
+  return res.json({ values: rows });
+});
+
+app.get('/api/reference/value-categories', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM value_categories ORDER BY sort_order').all();
+  return res.json({ categories: rows });
+});
+
+app.get('/api/reference/value-options', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM value_options ORDER BY option_id').all();
+  return res.json({ options: rows });
+});
+
+app.get('/api/reference/value-answers', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM value_answers ORDER BY value').all();
+  return res.json({ answers: rows });
+});
+
+app.get('/api/reference/work-history-value-defaults', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM work_history_value_defaults').all();
+  return res.json({ defaults: rows });
+});
+
+// --- VIPR Personality System ---
+app.get('/api/reference/vipr-test-pairs', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM vipr_test_pairs ORDER BY sort_order').all();
+  return res.json({ pairs: rows });
+});
+
+app.get('/api/reference/personality-types', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM personality_types ORDER BY sort_order').all();
+  return res.json({ types: rows });
+});
+
+app.get('/api/reference/personality-types/:type', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const row = getDb().prepare('SELECT * FROM personality_types WHERE personality_type = ?').get(req.params.type.toUpperCase());
+  if (!row) {
+    return res.status(404).json({ error: 'Personality type not found' });
+  }
+  return res.json({ type: row });
+});
+
+app.get('/api/reference/personality-type-indicators', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM personality_type_indicators ORDER BY sort_order').all();
+  return res.json({ indicators: rows });
+});
+
+// --- Test Score Conversion ---
+app.get('/api/reference/score-scales', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM score_scales ORDER BY standard').all();
+  return res.json({ scales: rows });
+});
+
+app.get('/api/reference/score-percentiles', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM score_percentiles ORDER BY percentile').all();
+  return res.json({ percentiles: rows });
+});
+
+// --- VIPR Job Descriptions ---
+app.get('/api/reference/vipr-job-descriptions', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const { dotCode, limit: rawLimit, offset: rawOffset } = req.query;
+  let sql = 'SELECT * FROM vipr_job_descriptions';
+  const params = [];
+  if (dotCode) {
+    sql += ' WHERE dot_code = ?';
+    params.push(dotCode);
+  }
+  const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 100, 1), 500);
+  const offset = Math.max(Number.parseInt(rawOffset, 10) || 0, 0);
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
+  const rows = getDb().prepare(sql).all(...params);
+  return res.json({ descriptions: rows, limit, offset });
+});
+
+// --- Occupation Details ---
+app.get('/api/occupations/details', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const { dotCode, search, limit: rawLimit, offset: rawOffset } = req.query;
+  let sql = 'SELECT * FROM occupation_details';
+  const params = [];
+  if (dotCode) {
+    sql += ' WHERE dot_code = ?';
+    params.push(dotCode);
+  } else if (search) {
+    sql += ' WHERE title LIKE ? OR dot_code LIKE ? OR oes_title LIKE ? OR holland_title LIKE ?';
+    const term = `%${search}%`;
+    params.push(term, term, term, term);
+  }
+  const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 50, 1), 500);
+  const offset = Math.max(Number.parseInt(rawOffset, 10) || 0, 0);
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
+  const rows = getDb().prepare(sql).all(...params);
+  return res.json({ details: rows, limit, offset });
+});
+
+app.get('/api/occupations/details/:dotCode', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const row = getDb().prepare('SELECT * FROM occupation_details WHERE dot_code = ?').get(req.params.dotCode);
+  if (!row) {
+    return res.status(404).json({ error: 'Occupation details not found' });
+  }
+  return res.json({ detail: row });
+});
+
+// --- Alternate Titles ---
+app.get('/api/occupations/alternate-titles', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const { search, docNo, limit: rawLimit, offset: rawOffset } = req.query;
+  let sql = 'SELECT * FROM occupation_alternate_titles';
+  const params = [];
+  if (docNo) {
+    sql += ' WHERE doc_no = ?';
+    params.push(docNo);
+  } else if (search) {
+    sql += ' WHERE alternate_title LIKE ?';
+    params.push(`%${search}%`);
+  }
+  const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 50, 1), 500);
+  const offset = Math.max(Number.parseInt(rawOffset, 10) || 0, 0);
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
+  const rows = getDb().prepare(sql).all(...params);
+  return res.json({ titles: rows, limit, offset });
+});
+
+// --- TEM/JOLT (Temperament + Labor Market) ---
+app.get('/api/occupations/tem-jolt', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const { dotCode, search, limit: rawLimit, offset: rawOffset } = req.query;
+  let sql = 'SELECT * FROM occupation_tem_jolt';
+  const params = [];
+  if (dotCode) {
+    sql += ' WHERE dot_code = ?';
+    params.push(dotCode);
+  } else if (search) {
+    sql += ' WHERE dot_title LIKE ? OR dot_code LIKE ?';
+    const term = `%${search}%`;
+    params.push(term, term);
+  }
+  const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 50, 1), 500);
+  const offset = Math.max(Number.parseInt(rawOffset, 10) || 0, 0);
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
+  const rows = getDb().prepare(sql).all(...params);
+  return res.json({ records: rows, limit, offset });
+});
+
+// --- DOT Education Crosswalk ---
+app.get('/api/occupations/education', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const { dotCode, search, limit: rawLimit, offset: rawOffset } = req.query;
+  let sql = 'SELECT * FROM dot_education';
+  const params = [];
+  if (dotCode) {
+    sql += ' WHERE dot_code = ?';
+    params.push(dotCode);
+  } else if (search) {
+    sql += ' WHERE dot_title LIKE ? OR dot_code LIKE ? OR caspar_title LIKE ? OR cip90_title LIKE ?';
+    const term = `%${search}%`;
+    params.push(term, term, term, term);
+  }
+  const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 50, 1), 500);
+  const offset = Math.max(Number.parseInt(rawOffset, 10) || 0, 0);
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
+  const rows = getDb().prepare(sql).all(...params);
+  return res.json({ education: rows, limit, offset });
+});
+
+// --- CASPAR Education Programs ---
+app.get('/api/occupations/caspar', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const { dotCode, limit: rawLimit, offset: rawOffset } = req.query;
+  let sql = 'SELECT * FROM occupation_caspar';
+  const params = [];
+  if (dotCode) {
+    sql += ' WHERE dot_code = ?';
+    params.push(dotCode);
+  }
+  const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 50, 1), 500);
+  const offset = Math.max(Number.parseInt(rawOffset, 10) || 0, 0);
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
+  const rows = getDb().prepare(sql).all(...params);
+  return res.json({ caspar: rows, limit, offset });
+});
+
+// --- Ratings (trait guidelines) ---
+app.get('/api/reference/ratings', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM ratings ORDER BY sort_order').all();
+  return res.json({ ratings: rows });
+});
+
+// --- Level Description Lookups ---
+app.get('/api/reference/svp-levels', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM svp_levels ORDER BY svp_level').all();
+  return res.json({ levels: rows });
+});
+
+app.get('/api/reference/strength-levels', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM strength_levels ORDER BY strength_level').all();
+  return res.json({ levels: rows });
+});
+
+app.get('/api/reference/weather-levels', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM weather_levels ORDER BY weather_level').all();
+  return res.json({ levels: rows });
+});
+
+app.get('/api/reference/physical-environmental-levels', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM physical_environmental_levels ORDER BY physical_level').all();
+  return res.json({ levels: rows });
+});
+
+app.get('/api/reference/zone-levels', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM zone_levels ORDER BY zone_level').all();
+  return res.json({ levels: rows });
+});
+
+app.get('/api/reference/onet-codes', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const { search, limit: rawLimit, offset: rawOffset } = req.query;
+  let sql = 'SELECT * FROM onet_codes';
+  const params = [];
+  if (search) {
+    sql += ' WHERE onet_title LIKE ? OR onet_code LIKE ?';
+    const term = `%${search}%`;
+    params.push(term, term);
+  }
+  const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 50, 1), 500);
+  const offset = Math.max(Number.parseInt(rawOffset, 10) || 0, 0);
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
+  const rows = getDb().prepare(sql).all(...params);
+  return res.json({ codes: rows, limit, offset });
+});
+
+app.get('/api/reference/countries', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM countries ORDER BY country_id').all();
+  return res.json({ countries: rows });
+});
+
+app.get('/api/reference/person-job-traits', (req, res) => {
+  if (!dbReady()) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  const rows = getDb().prepare('SELECT * FROM person_job_traits ORDER BY sort_order').all();
+  return res.json({ traits: rows });
+});
+
 app.all('/api', (req, res) => {
   return res.status(404).json({ error: 'API route not found' });
 });
