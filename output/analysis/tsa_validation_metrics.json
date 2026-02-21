@@ -1,0 +1,282 @@
+{
+  "generated_at_utc": "2026-02-16T20:27:46.057139+00:00",
+  "health": {
+    "ok": true,
+    "dbReady": true,
+    "jobs": 12975,
+    "states": 69,
+    "appDbReady": true,
+    "users": 15,
+    "savedReports": 10,
+    "psychometricResults": 8,
+    "dbPath": "/Users/chrisskerritt/Downloads/MVQS/data/mvqs-modern.db",
+    "appDbPath": "/Users/chrisskerritt/Downloads/MVQS/data/mvqs-app.db"
+  },
+  "readiness": {
+    "overall_status": "pass",
+    "blocking": false,
+    "checked_at_utc": "2026-02-16T20:27:46.072Z",
+    "core": {
+      "dbReady": true,
+      "appDbReady": true,
+      "metadata": {
+        "built_at_utc": "2026-02-07T16:10:43.277Z",
+        "legacy_dir": "/Users/chrisskerritt/MVQS/MVQS_Database 2",
+        "source_mode": "dc",
+        "source_main_path": "/Users/chrisskerritt/MVQS/MVQS_Database 2/MVQS_DC_Data.accdb",
+        "jobs_count": "12975",
+        "tasks_count": "119354",
+        "states_count": "69",
+        "counties_count": "3298",
+        "state_job_counts_count": "158471",
+        "county_job_counts_count": "3388936"
+      },
+      "counts": {
+        "jobs": 12975,
+        "job_tasks": 119354,
+        "states": 69,
+        "counties": 3298,
+        "state_job_counts": 158471,
+        "county_job_counts": 3388936,
+        "psychometric_catalog": 15
+      }
+    },
+    "checks": [
+      {
+        "id": "core.db.ready",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Main SQLite database opened."
+      },
+      {
+        "id": "core.app_db.ready",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "App SQLite database opened."
+      },
+      {
+        "id": "core.metadata.table",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Metadata table is present."
+      },
+      {
+        "id": "core.metadata.required_keys",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "All required metadata keys are present."
+      },
+      {
+        "id": "core.tables.nonempty",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "All required tables contain rows."
+      },
+      {
+        "id": "core.metadata.totals_match",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Metadata totals match live table counts."
+      },
+      {
+        "id": "core.states.installed",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "At least one installed state/province is available."
+      },
+      {
+        "id": "core.psychometric_catalog.nonempty",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Psychometric catalog is loaded."
+      },
+      {
+        "id": "core.playwright.chromium",
+        "status": "pass",
+        "severity": "warning",
+        "message": "Playwright Chromium is available for canonical PDF exports."
+      }
+    ],
+    "remediation": [
+      "npm run build:data -- --legacy-dir \"/Users/chrisskerritt/MVQS/MVQS_Database 2\" --source dc",
+      "npm run dev",
+      "npm run smoke:api"
+    ]
+  },
+  "invariant_metrics": {
+    "cases_total": 12,
+    "deterministic_pass": 12,
+    "deterministic_fail": 0,
+    "gate_invariant_fail": 0,
+    "unskilled_cap_fail": 0,
+    "monotonic_total_fail": 0,
+    "monotonic_overlap_fail": 0,
+    "strength_cap_fail": 0
+  },
+  "cases": [
+    {
+      "source_dot": "209587010",
+      "deterministic": true,
+      "total_hi": 1,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "230687010",
+      "deterministic": true,
+      "total_hi": 2,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "713684014",
+      "deterministic": true,
+      "total_hi": 3,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "372667010",
+      "deterministic": true,
+      "total_hi": 8,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "159647010",
+      "deterministic": true,
+      "total_hi": 3,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "701687010",
+      "deterministic": true,
+      "total_hi": 19,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "349664010",
+      "deterministic": true,
+      "total_hi": 15,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "869684082",
+      "deterministic": true,
+      "total_hi": 54,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "324677010",
+      "deterministic": true,
+      "total_hi": 18,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "700684014",
+      "deterministic": true,
+      "total_hi": 1,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "313684010",
+      "deterministic": true,
+      "total_hi": 4,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    },
+    {
+      "source_dot": "689685010",
+      "deterministic": true,
+      "total_hi": 2,
+      "total_lo": 0,
+      "gate_fail_count": 0,
+      "unskilled_source": true,
+      "unskilled_cap_fail": false,
+      "monotonic_total_ok": true,
+      "monotonic_overlap_fail_count": 0,
+      "strength_cap_fail_count": 0
+    }
+  ],
+  "raj_reference_parity": {
+    "pre_total": 6,
+    "post_total": 0,
+    "pre_bands": {
+      "total": 6,
+      "level_5": 0,
+      "level_4": 0,
+      "level_3": 0,
+      "level_2": 0,
+      "level_1": 6
+    },
+    "post_bands": {
+      "total": 0,
+      "level_5": 0,
+      "level_4": 0,
+      "level_3": 0,
+      "level_2": 0,
+      "level_1": 0
+    }
+  }
+}

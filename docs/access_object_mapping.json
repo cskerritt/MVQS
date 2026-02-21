@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "generated_at_utc": "2026-02-18T00:00:00Z",
+  "description": "Access object to modern runtime mapping policy. Explicit entries take precedence over wildcard rules.",
+  "rules": [
+    {
+      "name": "query_default",
+      "object_type": "query",
+      "pattern": "*",
+      "modern_target": "src/server.js",
+      "runtime_justification": "Saved-query semantics are enforced through parity inventory, dependency ordering, and table-tap validation artifacts before modern API/report execution."
+    },
+    {
+      "name": "report_default",
+      "object_type": "report",
+      "pattern": "*",
+      "modern_target": "src/report_template.js",
+      "runtime_justification": "Legacy report intent is represented by modern report payload generation and renderer templates; Access report runtime parity is separately validated in the Windows execution harness."
+    },
+    {
+      "name": "module_default",
+      "object_type": "module",
+      "pattern": "*",
+      "modern_target": "src/server.js",
+      "runtime_justification": "VBA module behavior is enforced via Access compile/invocation evidence in Windows parity execution and mapped to modern API/service orchestration."
+    }
+  ],
+  "objects": {
+    "modules": {
+      "modAPI_Calls": {
+        "modern_target": "src/server.js",
+        "runtime_justification": "External/API-facing automation is represented by modern HTTP service integrations in the Node runtime."
+      },
+      "modAccessWindowsUtilities": {
+        "modern_target": "scripts/parity_access_execute_windows.ps1",
+        "runtime_justification": "Access runtime window/process behavior remains validated in the Windows COM harness rather than reimplemented on non-Windows hosts."
+      },
+      "modApplication Shared - Functions": {
+        "modern_target": "src/server.js",
+        "runtime_justification": "Shared calculation/flow orchestration has been centralized in the modern service layer with parity evidence artifacts."
+      },
+      "modAutoExec Functions and Globals": {
+        "modern_target": "src/server.js",
+        "runtime_justification": "Startup globals and bootstrapping are represented by importer initialization plus server startup checks."
+      },
+      "modCombine_Files_Functions": {
+        "modern_target": "src/report_template.js",
+        "runtime_justification": "Legacy file-combine report generation maps to modern report/case-packet export logic and template rendering."
+      },
+      "modCombine_Files_Functions_with_Adobe": {
+        "modern_target": "src/report_template.js",
+        "runtime_justification": "Adobe/report-combine variants are covered by modern markdown/PDF pipeline and export parity validation."
+      },
+      "modErrorHandler": {
+        "modern_target": "src/server.js",
+        "runtime_justification": "Error handling is mapped to API/runtime exception handling and strict parity gate failures."
+      },
+      "modMVQS Functions": {
+        "modern_target": "src/server.js",
+        "runtime_justification": "Core MVQS calculations are represented in modern computation and report assembly endpoints."
+      },
+      "modOpenFile": {
+        "modern_target": "src/server.js",
+        "runtime_justification": "Legacy open-file actions map to modern case/report export and retrieval endpoints."
+      }
+    },
+    "reports": {},
+    "queries": {}
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "generated_at_utc": "2026-02-17T18:34:44.584337Z",
+  "base_url": "http://localhost:4173",
+  "methodology_version": "mvqs_transferable_skills_v3_legacy_sync",
+  "methodology": {
+    "env_preference": "auto",
+    "selected_model": "mvqs_transferable_skills_v3_legacy_sync",
+    "methodology_version": "mvqs_transferable_skills_v3_legacy_sync",
+    "reason": "auto_v3",
+    "legacy_sync_ready": true,
+    "legacy_snapshot_id": "20260217T182800Z",
+    "parity_profile": "legacy_sync",
+    "layout_version": "mtsp-canonical-html-v1",
+    "section7_resolution_version": "2026-02-17.local-evidence.v1",
+    "section7_unresolved_ids": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "section7_confidence_profile": {
+      "high": 2,
+      "medium": 5,
+      "low": 7,
+      "total_items": 14
+    }
+  },
+  "samples": [
+    {
+      "pdf_path": "/Users/chrisskerritt/Downloads/MVQS/MVQS_Database 2/Reports/Donald Mitchell/Mitchell_MTSP.pdf",
+      "sample_rows": 47,
+      "overlap_rows": 47,
+      "ts_mae": 3.221276595744681,
+      "va_mae": 20.657446808510638
+    }
+  ],
+  "metrics": {
+    "rows_compared": 47,
+    "ts_mae": 3.221276595744681,
+    "va_mae": 20.657446808510638,
+    "ts_std_error": 1.538314057770712,
+    "va_std_error": 0.9414680639599687,
+    "ts_ci95_low": 0.20618104251408598,
+    "ts_ci95_high": 6.236372148975276,
+    "va_ci95_low": 18.8121694031491,
+    "va_ci95_high": 22.502724213872177,
+    "top25_overlap": 12,
+    "spearman_rank_corr": -0.1294646548964216,
+    "ts_band_confusion": {
+      "sample_5->api_2": 1,
+      "sample_3->api_2": 1,
+      "sample_2->api_2": 45
+    }
+  },
+  "gates": {
+    "ts_mae_gate": 2.0,
+    "va_mae_gate": 5.0,
+    "ts_mae_pass": false,
+    "va_mae_pass": false,
+    "overall_pass": false
+  }
+}

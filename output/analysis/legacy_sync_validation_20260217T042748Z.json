@@ -1,0 +1,52 @@
+{
+  "generated_at_utc": "2026-02-17T04:27:48.993717Z",
+  "base_url": "http://localhost:4173",
+  "methodology_version": "mvqs_transferable_skills_v2_mtsp_calibrated",
+  "methodology": {
+    "env_preference": "auto",
+    "selected_model": "mvqs_transferable_skills_v2_mtsp_calibrated",
+    "methodology_version": "mvqs_transferable_skills_v2_mtsp_calibrated",
+    "reason": "auto_v2_fallback",
+    "legacy_sync_ready": false,
+    "legacy_snapshot_id": null,
+    "parity_profile": "mtsp_calibrated_fallback",
+    "layout_version": "mtsp-canonical-html-v1"
+  },
+  "samples": [
+    {
+      "pdf_path": "/Users/chrisskerritt/Library/Messages/Attachments/21/01/03BDF4C6-C201-41FA-99A9-B53607CE05D7/Pollack, Michael - MTSP (w. adj).pdf",
+      "sample_rows": 82,
+      "overlap_rows": 82,
+      "ts_mae": 1.901219512195122,
+      "va_mae": 4.368292682926831
+    }
+  ],
+  "metrics": {
+    "rows_compared": 82,
+    "ts_mae": 1.901219512195122,
+    "va_mae": 4.368292682926831,
+    "ts_std_error": 0.29351360715712427,
+    "va_std_error": 0.6199651233227939,
+    "ts_ci95_low": 1.3259328421671586,
+    "ts_ci95_high": 2.4765061822230856,
+    "va_ci95_low": 3.153161041214155,
+    "va_ci95_high": 5.583424324639507,
+    "top25_overlap": 21,
+    "spearman_rank_corr": 0.8766404608621817,
+    "ts_band_confusion": {
+      "sample_5->api_5": 3,
+      "sample_4->api_4": 8,
+      "sample_4->api_3": 1,
+      "sample_3->api_3": 25,
+      "sample_2->api_2": 44,
+      "sample_1->api_1": 1
+    }
+  },
+  "gates": {
+    "ts_mae_gate": 2.0,
+    "va_mae_gate": 5.0,
+    "ts_mae_pass": true,
+    "va_mae_pass": true,
+    "overall_pass": true
+  }
+}

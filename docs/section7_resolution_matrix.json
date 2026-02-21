@@ -1,0 +1,252 @@
+{
+  "version": "2026-02-18.local-evidence.v2",
+  "title": "MVQS Section 7 Resolution Matrix",
+  "generated_from": "/Users/chrisskerritt/Downloads/MVQS.docx",
+  "items": [
+    {
+      "id": 1,
+      "follow_up_question": "What are the names, scales, and allowable values of the \"24 most vocationally significant McDOT variables\" used for worker-job matching?",
+      "filled_answer": "R M L S P Q K F M E C + PD1..PD6 + EC1..EC7 with scales defined in MVQS codes/manual content and mirrored in src/traits.js.",
+      "confidence": "high",
+      "status": "resolved",
+      "implementation_handling": "Lock this as the canonical trait dictionary for matching/reporting.",
+      "evidence": [
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/traits.js",
+          "note": "Defines trait codes and min/max bounds."
+        },
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/MVQS_DC_FrontEnds_v314/MVQS_Codes_15.doc",
+          "note": "Lists codes, labels, and scales."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "follow_up_question": "What are the explicit rules for converting each assessment source (paper-pencil, work samples, functional capacity, structured interviews) into each of the 24 variable scores?",
+      "filled_answer": "Manuals provide worksheet/percentile approximation guidance, but no single explicit end-to-end algorithm maps every instrument to every trait.",
+      "confidence": "low",
+      "status": "unresolved",
+      "implementation_handling": "Document partial guidance and treat full mapping as a blocker for exact legacy parity.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/05MVQSVDARE2017Manual.doc",
+          "note": "Contains worksheet and approximation tables, not full instrument-to-trait equations."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "follow_up_question": "What does each field represent, what is its scaling, and how do these fields correspond to the claimed \"4 Factor, 24 Worker Trait-Level\" structure?",
+      "filled_answer": "Legacy report headers show RMLSPQKFMEC1234561234567 and map to GED + aptitudes + PD1-6 + EC1-7. GVN variant wording is not fully documented.",
+      "confidence": "medium",
+      "status": "partial",
+      "implementation_handling": "Standardize modern display using RML/SPQKFMEC/PD1-6/EC1-7 mapping and note unresolved header variant semantics.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/06RunMVQS2017.doc",
+          "note": "Shows report headers with RMLSPQKFMEC1234561234567."
+        },
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/report_template.js",
+          "note": "Uses trait order R M L S P Q K F M E C | PD1..PD6 | EC1..EC7."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "follow_up_question": "For each matching pattern (McDOT digit matches and O*NET digit matches), what tens-digit value is assigned and why?",
+      "filled_answer": "Current deriveMtspTier implementation maps documented pattern classes into five MTSP tiers, but no legacy-published exact tens-digit table is available.",
+      "confidence": "medium",
+      "status": "partial",
+      "implementation_handling": "Retain current tier map and publish as an explicit assumption.",
+      "evidence": [
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/server.js",
+          "note": "deriveMtspTier contains rule mapping."
+        },
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/MVQS_DC_FrontEnds_v314/The MVQS Theory of Transferable Skills.doc",
+          "note": "Defines pattern classes and level ranges."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "follow_up_question": "Is the ones digit incremented by exactly 1 per match across SIC, SOC, CEN, MPSMS, WF1, IND? Are any crosswalks weighted differently?",
+      "filled_answer": "Legacy text says ones digit accumulates per crosswalk match, but exact per-code weighting is not published.",
+      "confidence": "medium",
+      "status": "partial",
+      "implementation_handling": "Keep modern crosswalk composite behavior and annotate that exact legacy per-crosswalk weighting remains unresolved.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/MVQS_DC_FrontEnds_v314/The MVQS Theory of Transferable Skills.doc",
+          "note": "Mentions accumulation across crosswalk codes."
+        },
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/server.js",
+          "note": "v3 overlay applies composite crosswalk contribution."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "follow_up_question": "What is the exact transformation function, including any normalization or scaling constants, that converts the raw score to the percent scale?",
+      "filled_answer": "Modern TSA exposes raw 0-46 and applies round((raw/46)*97,1). Legacy SSTS documents also show a separate raw/6*100 matrix in a different context.",
+      "confidence": "medium",
+      "status": "partial",
+      "implementation_handling": "Publish 0-46 to 0-97 transform as current model assumption and preserve audit trace fields.",
+      "evidence": [
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/server.js",
+          "note": "legacy_trace and raw transform fields."
+        },
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/05MVQSVDARE2017Manual.doc",
+          "note": "Shows raw/6*100 matrix in SSTS material."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "follow_up_question": "What O*NET elements are used for VQ1, what weighting is applied, and what formula produces VQ1?",
+      "filled_answer": "Exact VQ1 derivation formula is not recoverable from currently available local source material.",
+      "confidence": "low",
+      "status": "unresolved",
+      "implementation_handling": "Treat as blocker requiring primary source extraction/tables.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/MVQS.docx",
+          "note": "Documents the gap and asks for exact VQ1 derivation."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "follow_up_question": "What is the exact transformation equation used to convert the raw sum (0 to 204) to the VQ metric, including rounding rules?",
+      "filled_answer": "Recovered direct basCalculate_VQ intercept and trait coefficients from Option Compare Database module export; modern app now computes deterministic profile VQ values using those constants.",
+      "confidence": "medium",
+      "status": "resolved",
+      "implementation_handling": "Use recovered coefficients for profile VQ computation and expose methodology metadata in payloads/reports.",
+      "evidence": [
+        {
+          "type": "module_export",
+          "path": "/Users/chrisskerritt/Downloads/Option Compare Database (1).docx",
+          "note": "Contains basCalculate_VQ function with intercept and per-trait coefficients."
+        },
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/server.js",
+          "note": "computeLegacyProfileVq implements recovered basCalculate_VQ coefficients."
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "follow_up_question": "When the source states \"only those target jobs matching the worker’s evaluative data profile,\" is match defined as equality, range overlap, threshold proximity, or weighted similarity?",
+      "filled_answer": "Current implementation uses strict all-trait non-deficit profile gating (target <= profile across all 24 traits), then weighted ranking/scoring.",
+      "confidence": "high",
+      "status": "resolved",
+      "implementation_handling": "Document this as the operational match rule for current model behavior.",
+      "evidence": [
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/server.js",
+          "note": "profile_gate_failed logic and strict gating in TSA computation."
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "follow_up_question": "When \"Average Hourly Wage\" is calculated for job types and then paired to integer VQ points, are averages weighted by openings, unweighted, or computed by another rule?",
+      "filled_answer": "No explicit weighting rule is recoverable from currently available local source material.",
+      "confidence": "low",
+      "status": "unresolved",
+      "implementation_handling": "Leave unresolved and require pipeline/table-level extraction evidence.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/MVQS.docx",
+          "note": "Captures the unresolved weighting question."
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "follow_up_question": "Which Statistica outlier diagnostic(s) were used (residual threshold, leverage, Cook’s D, etc.) and what threshold values triggered removal?",
+      "filled_answer": "OES/Indiana materials cite 2-SD style outlier definitions; state work-order Statistica diagnostics/thresholds are not explicitly identified.",
+      "confidence": "low",
+      "status": "unresolved",
+      "implementation_handling": "Mark unresolved for state pipeline parity and require explicit diagnostic references.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/MVQS.docx",
+          "note": "Documents the discrepancy between cited tools and missing explicit diagnostics."
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "follow_up_question": "For Louisiana pipelines, which work-order totals are correct (for example, 24,657 vs 26,641), and what caused the discrepancy between narrative counts and Table 1 counts?",
+      "filled_answer": "Count discrepancy is identified but not resolved by currently available local source material.",
+      "confidence": "low",
+      "status": "unresolved",
+      "implementation_handling": "Track as blocker needing primary source reconciliation.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/MVQS.docx",
+          "note": "Explicitly records unresolved Louisiana sample-size conflict."
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "follow_up_question": "What is the exact procedure, data source, and formula used to apply link relatives for geographic wage differences and inflation adjustments to the OES-based wage estimates?",
+      "filled_answer": "Intent and supporting concepts (ECLR, wage growth, link-relative rationale) are documented, but exact computational sequence is not fully specified.",
+      "confidence": "low",
+      "status": "partial",
+      "implementation_handling": "Preserve current behavior and flag exact formula as unresolved.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/91MVQS Rehabilitation Economist Program Manual.doc",
+          "note": "Discusses link relatives and adjustment intent without complete implementation sequence."
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "follow_up_question": "For each of the \"5 report output formats\" in McDOT and the MTSP report styles, what sections, variables, and calculations appear, and what are the formatting rules?",
+      "filled_answer": "Legacy runbook enumerates report titles/menus (McDOT 1-5, McPLOT 1-5, MTSP 1-22), but complete field-level rendering rules for all formats remain partial.",
+      "confidence": "medium",
+      "status": "partial",
+      "implementation_handling": "Implement core MTSP report expansion and defer full 1-22 parity.",
+      "evidence": [
+        {
+          "type": "manual",
+          "path": "/Users/chrisskerritt/Downloads/06RunMVQS2017.doc",
+          "note": "Enumerates report menus and report titles."
+        },
+        {
+          "type": "code",
+          "path": "/Users/chrisskerritt/Downloads/MVQS/src/report_template.js",
+          "note": "Current transferable report implementation baseline."
+        }
+      ]
+    }
+  ]
+}

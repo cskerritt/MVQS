@@ -1,0 +1,29 @@
+node_modules/
+.DS_Store
+data/*.db
+data/*.db-shm
+data/*.db-wal
+/tmp/
+
+# Legacy Access databases (large binary files)
+MVQS_Database 2/*.accdb
+MVQS_Database 2/*.accde
+MVQS_Database 2/*.doc
+MVQS_Database 2/*.docx
+MVQS_Database 2/*.dotx
+MVQS_Database 2/*.pdf
+MVQS_Database 2/Reports/
+MVQS_DC_FrontEnds_v314/*.accdb
+MVQS_DC_FrontEnds_v314/*.accde
+MVQS_DC_FrontEnds_v314/*.doc
+
+# Legacy data snapshots (large CSVs)
+data/legacy_snapshot/*/tables/*.csv
+
+# Playwright cache
+.playwright-cli/
+
+# Build analysis output (large generated artifacts)
+output/playwright/
+output/analysis/mtsp_corpus_retest_*.json
+output/analysis/tsa_batch_*.json

@@ -1,0 +1,32 @@
+{
+  "modules": {
+    "modAPI_Calls": [
+      "modAPI_Calls.Main"
+    ],
+    "modAccessWindowsUtilities": [
+      "modAccessWindowsUtilities.Main"
+    ],
+    "modApplication Shared - Functions": [
+      "Main"
+    ],
+    "modAutoExec Functions and Globals": [
+      "AutoExec",
+      "modAutoExec Functions and Globals.AutoExec"
+    ],
+    "modCombine_Files_Functions": [
+      "modCombine_Files_Functions.Main"
+    ],
+    "modCombine_Files_Functions_with_Adobe": [
+      "modCombine_Files_Functions_with_Adobe.Main"
+    ],
+    "modErrorHandler": [
+      "modErrorHandler.Main"
+    ],
+    "modMVQS Functions": [
+      "modMVQS Functions.Main"
+    ],
+    "modOpenFile": [
+      "modOpenFile.Main"
+    ]
+  }
+}

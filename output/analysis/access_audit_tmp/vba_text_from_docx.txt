@@ -1,0 +1,2222 @@
+Option Compare Database
+Option Explicit
+
+'Declare Function GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
+
+Function NTDomainUserName() As String
+    'Dim strBuffer As String * 255
+    'Dim lngBufferLength As Long
+    'Dim lngRet As Long
+    'Dim strTemp As String
+    
+    'lngBufferLength = 255
+    'lngRet = GetUserName(strBuffer, lngBufferLength)
+    'strTemp = left$(strBuffer, InStr(strBuffer, Chr$(0)))
+    'NTDomainUserName = left$(strTemp, Len(strTemp) - 1)
+    
+    NTDomainUserName = Environ("UserName")
+    
+End FunctionOption Compare Database
+
+Public Function basCallJobSearch() As String
+
+  '** ? basCallJobSearch()
+
+    Dim objHTTP As Object
+    Dim sURL As String
+    Dim sResponse As String
+
+    ' Define the API endpoint URL
+    'sURL = "https://api.example.com/data" ' Replace with your actual API URL
+    
+
+     sURL = "http://mvqsjobsearch.com/api/search job=""firmware engineer"" location=""San Francisco, CA"" sites:='[""indeed"",""linkedin""]' num_queries:=5 remote_only:=false"
+    
+    'http POST mvqsjobsearch.com/api/search job="firmware engineer" location="San Francisco, CA" sites:='["indeed","linkedin"]' num_queries:=5 remote_only:=false
+
+    ' Create a new XMLHTTP request object
+    Set objHTTP = CreateObject("MSXML2.XMLHTTP")
+
+    ' Open the GET request
+    'objHTTP.Open "GET", sURL, False ' False for synchronous request
+    objHTTP.Open "POST", sURL, False ' False for synchronous request
+
+    ' Send the request
+    objHTTP.Send
+
+    ' Get the response text
+    sResponse = objHTTP.ResponseText
+
+    ' Display the response (for testing)
+    MsgBox sResponse
+
+    ' You would then parse sResponse (e.g., if it's JSON)
+    ' and use the data in your Access database
+
+    Set objHTTP = Nothing
+End Function
+Option Compare Database
+Option Explicit
+
+Function basFindCorruptRecord(pWhichTable As String) As Long
+
+  On Error GoTo Generic_Err
+  
+  Dim rec As Recordset, intCnt As Integer
+  Dim strNotes As String
+   
+   
+  Select Case pWhichTable
+  Case "tblTableName"
+    Set rec = CurrentDb.OpenRecordset("tblTableName")
+  End Select
+  
+  
+  intCnt = 0
+  
+  While Not rec.EOF
+
+    Select Case pWhichTable
+    Case "tblTableName"
+      If Left(rec!NoteFieldName, 6) = "#Error" Then
+        Debug.Print rec!id
+      End If
+      
+    End Select
+  
+
+    rec.MoveNext
+    intCnt = intCnt + 1
+    'If intCnt > 10 Then
+    '  Exit Function
+    'End If
+    
+    
+    
+  Wend
+  
+  
+Generic_Exit:
+ 
+  Set rec = Nothing
+  
+  MsgBox "The corrupt record search has been completed.", , gstrApplicationName
+  
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  
+  Case 3197  '** Can access Notes field due to multi-user ( Corruption! )
+    
+    Select Case pWhichTable
+    Case "tblTableName"
+    MsgBox "Found corrupt record with ID: " & rec!id & ".", , gstrApplicationName
+    
+    End Select
+    
+    'Resume Generic_Exit
+    Resume Next
+      
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+  
+End Function
+
+Function basRepairCorruptRecord(pWhichTable As String, pRecordID As String) As Long
+
+On Error GoTo Generic_Err
+
+Select Case pWhichTable
+  Case "tblTableName"
+  
+    Set gqdf = CurrentDb.QueryDefs("qryAAA_TableName_APPEND_TO_Temp_Table_WHE_Corrupt")
+    gqdf.Parameters("pRecordID") = pRecordID
+    gqdf.Execute
+    
+    Set gqdf = CurrentDb.QueryDefs("qryAAA_TableName_DELETE_WHE_Corrupt")
+    gqdf.Parameters("pRecordID") = pRecordID
+    gqdf.Execute
+    
+    Set gqdf = CurrentDb.QueryDefs("qryAAA_TableName_APPEND_FROM_Temp_Table_WHE_Corrupt")
+    gqdf.Parameters("pRecordID") = pRecordID
+    gqdf.Execute
+    
+    MsgBox "Repair of Reminder ID: " & pRecordID & " completed successfully.", , gstrApplicationName
+    
+   
+End Select
+
+
+
+Generic_Exit:
+ 
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+
+End Function
+
+Public Function basGetMultiSelection(pMultiSelectControl As Control, pColumnName As String, pDataType As String) As String
+ 
+  On Error GoTo Generic_Err
+
+  Dim varMultiSelectItem As Variant, strMultiSelectString As String
+  Dim intCount As Integer
+  
+  intCount = 1
+     
+  
+  For Each varMultiSelectItem In pMultiSelectControl.ItemsSelected
+        
+    '** If strings then add quotes, else it is probably ID's which do not need quotes.
+    Select Case pDataType
+    Case "Header"
+    
+      If intCount <> pMultiSelectControl.ItemsSelected.Count Then
+        basGetMultiSelection = basGetMultiSelection & pMultiSelectControl.ItemData(varMultiSelectItem) & ", "
+      Else
+        basGetMultiSelection = basGetMultiSelection & pMultiSelectControl.ItemData(varMultiSelectItem)
+      End If
+      
+    
+    Case "String"
+    
+      If intCount <> pMultiSelectControl.ItemsSelected.Count Then
+        basGetMultiSelection = basGetMultiSelection & pColumnName & " = '" & pMultiSelectControl.ItemData(varMultiSelectItem) & "' OR "
+      Else
+        basGetMultiSelection = basGetMultiSelection & pColumnName & " = '" & pMultiSelectControl.ItemData(varMultiSelectItem) & "'"
+      End If
+      
+      
+    Case "IN()"
+    
+      If intCount = 1 Then
+        basGetMultiSelection = " In ("
+      End If
+    
+      If intCount <> pMultiSelectControl.ItemsSelected.Count Then
+        basGetMultiSelection = basGetMultiSelection & "'" & pMultiSelectControl.ItemData(varMultiSelectItem) & "',"
+      Else
+        basGetMultiSelection = basGetMultiSelection & "'" & pMultiSelectControl.ItemData(varMultiSelectItem) & "')"
+      End If
+      
+      
+    Case Else
+  
+      If intCount <> pMultiSelectControl.ItemsSelected.Count Then
+        basGetMultiSelection = basGetMultiSelection & pColumnName & " = " & pMultiSelectControl.ItemData(varMultiSelectItem) & " OR "
+      Else
+        basGetMultiSelection = basGetMultiSelection & pColumnName & " = " & pMultiSelectControl.ItemData(varMultiSelectItem)
+      End If
+
+    End Select  '**   If pDataType = "String"  or Header Then
+
+
+  intCount = intCount + 1
+  Next varMultiSelectItem
+  
+  'Debug.Print rptCriteria
+  
+  
+Generic_Exit:
+  
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+  
+End Function
+
+
+Function basGetDatabaseAdmin(pWhat As String) As String
+
+  On Error GoTo Generic_Err
+  
+   basGetDatabaseAdmin = ""
+   
+   Set grec = CurrentDb.OpenRecordset("qryDatabaseUsers_WHE_DatabaseAdmin_Primary")
+   
+   If pWhat = "Primary" Then
+     If Not IsNull(grec!WorkPhone) Then
+       basGetDatabaseAdmin = grec!FirstName & " " & grec!LastName & " at " & grec!WorkPhone
+     Else
+       basGetDatabaseAdmin = grec!FirstName & " " & grec!LastName
+     End If
+   End If
+   
+   If pWhat = "All" Then
+     '** Build a string of Database administrators.
+     'basGetDatabaseAdmin = grec!FirstName & " " & grec!LastName
+   End If
+   
+   Set grec = Nothing
+   
+  
+Generic_Exit:
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      '** Apparently some error messages have @ in them and then do not allow us to concatenate our own messages afterwards!
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+  
+End Function
+
+Function basGetTechSupport(pWhat As String) As String
+
+  On Error GoTo Generic_Err
+  
+   basGetTechSupport = ""
+   
+   Set grec = CurrentDb.OpenRecordset("qryDatabaseUsers_WHE_TechSupport_Primary")
+   
+   If pWhat = "Primary" Then
+     If Not IsNull(grec!WorkPhone) Then
+        basGetTechSupport = "Dan Bur - (612) 578-5544"
+     '  basGetTechSupport = grec!FirstName & " " & grec!LastName & " at extension " & grec!WorkPhone
+     Else
+        basGetTechSupport = "Dan Bur - (612) 578-5544"
+      ' basGetTechSupport = grec!FirstName & " " & grec!LastName
+     End If
+   End If
+   
+   If pWhat = "All" Then
+     '** Build a string of Database administrators.
+     'basGetDatabaseAdmin = grec!FirstName & " " & grec!LastName
+   End If
+   
+   Set grec = Nothing
+   
+Generic_Exit:
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      '** Apparently some error messages have @ in them and then do not allow us to concatenate our own messages afterwards!
+      'Msgbox "Unrecognized error occurred. Error No: " + str(err) + " - " + Error & _
+      '          vbCRLF & vbCRLF & "Please note what you were doing before this message appeared " & _
+      '          " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+  
+End Function
+
+
+Function basIsLoaded(ByVal strformName As String) As Integer
+'*********************************************************************************
+'* Returns True if the specified form is open in Form view or Datasheet view.    *
+'*                                                                               *
+'*********************************************************************************
+
+    Const conObjStateClosed = 0
+    Const conDesignView = 0
+    
+    If SysCmd(acSysCmdGetObjectState, acForm, strformName) <> conObjStateClosed Then
+        If Forms(strformName).CurrentView <> conDesignView Then
+            basIsLoaded = True
+        End If
+    End If
+    
+End Function
+
+
+Function basGetDate(dtX As Variant) As Date
+'******************************************************************************************
+'* Desc:       Displays the Calendar Control and returns the date clicked.                *
+'*             This function requires the frmCalendarControl form.                        *
+'*                                                                                        *
+'* Called by:  Any form that has a button to access the Calendar Control.                 *
+'* Calls:      -                                                                          *
+'* Author:     Dan Bur                                                                    *
+'* Revisions:                                                                             *
+'* Accepts:    dtX as a date, usually the date that is in the corresponding date field.   *
+'******************************************************************************************
+
+  On Error GoTo basGetDate_Err
+  
+  DoCmd.OpenForm "frmCalendarControl"
+ 
+  '*** This is the only way to get the date to display on the Calendar Control.
+  If IsNull(dtX) Then
+    Forms!frmCalendarControl!actXCalendar = Date
+  Else
+    Forms!frmCalendarControl!actXCalendar = dtX
+  End If
+  
+  '*** This makes sure that the form is fully displayed before while loop starts.
+  DoEvents
+  
+  ' Loop until the User either selects a date or closes form.
+  While Forms!frmCalendarControl.Visible
+     '*** Wait...
+     '*** This allows the click from the user to be processed.
+     DoEvents
+  Wend
+   
+  '*** If it is invisible then user selected a date otherwise they closed it.
+  If basIsLoaded("frmCalendarControl") Then
+    basGetDate = Forms("frmCalendarControl").actXCalendar.Value
+    DoCmd.Close acForm, "frmCalendarControl"
+  Else
+    basGetDate = Null
+  End If
+   
+basGetDate_Exit:
+  
+  Exit Function
+   
+basGetDate_Err:
+
+  '*** frmCalendarControl is closed and can't be Visible.
+  If Err = 2450 Then
+    Resume Next
+  End If
+  
+  Resume basGetDate_Exit
+  
+End Function
+Option Compare Database   'Use database order for string comparisons
+Option Explicit           '** Force explicit variable declarations.
+
+Global gqdf As QueryDef
+Global grec As Recordset
+
+Global gstrApplicationName As String
+Global gstrApplicationDescription As String   '** This is displayed on the AboutDatabase form.
+
+Global gReportHasNoData As Integer
+Global gstrWHERE  As String
+
+Global glngNextPageNo As Long, glngTotalPages As Long   '** Used to build the Table of Contents
+
+'** Global variables that are specific to this application.
+
+Global glngUserID As Long
+Global gstrLANLogin As String
+Global gSecurityLevel_Original As String
+Global gSecurityLevel As String              '** This is the Short Description in tblXLU_SecurityLevels and used for Menu and Form and Sub Form security access.
+
+
+Public Function basRepeatString(pChar As String, pCount As Integer) As String
+
+
+  '** ? basRepeatString(".",10)
+  '** ? basRepeatString(".",Len("Sub Chapter 1"))
+  
+  Dim strString As String, intCount As Integer
+    
+  strString = pChar
+  
+  
+  For intCount = 1 To pCount
+  
+    strString = strString & pChar
+    
+  Next
+  
+  basRepeatString = strString
+   
+  
+End Function
+
+Public Function basGet_Pages(pPersonID As Long, pTyoeofPage As String, Optional pSortOrder As Long) As Long
+
+
+  '** ? basGet_Pages(95,"Total Pages")
+  '** ? basGet_Pages(95, "Last Page", 11)
+
+
+  On Error GoTo Generic_Err
+
+  Select Case pTyoeofPage
+  
+  Case "Total Pages"
+  
+    '** Get the Total Number of Pages in the Combined Report!
+    Set gqdf = CurrentDb.QueryDefs("qryEvaluee_Rpt_Table_of_Contents_SUM_Pages_WHE_pPersonID")
+    gqdf.Parameters("pPersonID") = pPersonID
+    Set grec = gqdf.OpenRecordset()
+
+    If grec.EOF Then
+      basGet_Pages = 0
+    Else
+      basGet_Pages = grec!Report_Total_Pages
+    End If
+    
+  Case "Last Page"
+  
+    '** Get the Total Number of Pages in the Combined Report!
+    Set gqdf = CurrentDb.QueryDefs("qryEvaluee_Rpt_Table_of_Contents_Last_Page_WHE_pPersonID")
+    gqdf.Parameters("pPersonID") = pPersonID
+    gqdf.Parameters("pSortOrder") = pSortOrder
+    Set grec = gqdf.OpenRecordset()
+
+    If grec.EOF Then
+      basGet_Pages = 0
+    Else
+      basGet_Pages = grec!Last_Page
+    End If
+    
+  End Select
+  
+  
+  
+Generic_Exit:
+
+  Set gqdf = Nothing
+  Set grec = Nothing
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+  
+
+End Function
+
+Public Function basCurBackEnd(TableName As String) As String
+'Public Function basCurBackEnd(TableName As String, DbPWD As String) As String
+
+'** https://accessjitsu.com/2017/01/25/microsoft-access-vba-to-compact-and-repair/
+'** Microsoft Access VBA to Compact and Repair
+'** Posted on January 25, 2017 by raylharvey
+
+On Error GoTo SubError
+    
+    Dim tdf As DAO.TableDef
+    Dim lenPath As Integer
+    Dim strPath As String
+    Dim I, J, K As Integer
+        
+    basCurBackEnd = ""
+       
+    '  Loop through all tables in the database.
+    For Each tdf In CurrentDb.TableDefs
+        If InStr(tdf.Name, TableName) Then
+            strPath = tdf.Connect       '   this is the table that we are hunting for
+            lenPath = Len(strPath)
+            '     Now remove the datebase prefix (DATABASE=)
+            J = InStr(strPath, "DATABASE=") + 9
+            basCurBackEnd = Mid(strPath, J, lenPath - J + 1)
+
+'            Get database password
+            J = InStr(strPath, "PWD") + 4
+            K = InStr(J, strPath, ";") 'length of password
+            
+'            DbPWD = Mid(strPath, j, k - j)
+            
+            'MsgBox "Password: " & Mid(strPath, j, k - j)
+            GoTo SubExit
+        
+        End If
+    Next tdf
+            
+SubExit:
+
+On Error Resume Next
+    Exit Function
+ 
+SubError:
+    MsgBox "frmCompaction - CurBackEnd error: " & vbCrLf & Err.Number & " = " & Err.description
+    Resume SubExit
+ 
+End Function
+
+
+'Public Function basCompactDatabase(DatabaseName As String, DbPWD As String) As Boolean
+Public Function basCompactDatabase(DatabaseName As String) As Boolean
+
+On Error GoTo SubError
+
+    Dim booStatus As Boolean
+    Dim backupCreated As Boolean
+    Dim strBackupFile As String
+    Dim dtmStart As Date
+    Dim strLDB As String
+    Dim strCurLinkDir As String
+    Dim compactSuccessfull As Boolean
+ 
+    booStatus = False
+    backupCreated = False
+    compactSuccessfull = False
+    
+    ' Make sure that DatabaseName exists
+    If Len(Dir$(DatabaseName)) > 0 Then
+    
+        ' Figure out what the backup file should be named
+        If StrComp(Right$(DatabaseName, 6), ".accdb", vbTextCompare) = 0 Then
+            strBackupFile = Left$(DatabaseName, Len(DatabaseName) - 6) & "-Old.accdb"
+            ' Determine whether the backup file already exists, and delete it if it does.
+            If Len(Dir$(strBackupFile)) > 0 Then
+                Kill strBackupFile
+            End If
+            
+            strLDB = Left$(DatabaseName, Len(DatabaseName) - 6) & ".laccdb"
+            If Len(Dir$(strLDB)) > 0 Then
+                MsgBox "Backend database is still opened.  Make sure everyone is logged off " _
+                       & "and try again.", vbCritical + vbOKOnly, "Database still open"
+                GoTo SubExit
+            End If
+ 
+            ' rename backend to backup name
+            Name DatabaseName As strBackupFile
+            backupCreated = True
+ 
+            'DBEngine.CompactDatabase strBackupFile, DatabaseName
+            'DBEngine.CompactDatabase strBackupFile, DatabaseName, , , ";PWD=" & DbPWD
+            DBEngine.CompactDatabase strBackupFile, DatabaseName
+                     
+            compactSuccessfull = True
+            
+            If backupCreated = True _
+            And compactSuccessfull = True Then
+                Kill strBackupFile
+            End If
+            booStatus = True
+        Else
+            booStatus = False
+        End If
+    
+    End If
+ 
+SubExit:
+    basCompactDatabase = booStatus
+    Exit Function
+ 
+SubError:
+    booStatus = False
+    
+    'Undo our attempt at compacting
+    If backupCreated = True Then
+        If compactSuccessfull = False Then
+            Name strBackupFile As DatabaseName
+        End If
+    End If
+        
+    MsgBox "CompactDatabase error: " & vbCrLf & Err.Number & ": " & Err.description
+    Resume SubExit
+ 
+End Function
+
+Public Function basGetVersion(pWhichOne As String) As String
+
+  On Error GoTo Generic_Err
+
+  '** ? basGetVersion("Front End Current")
+  
+  basGetVersion = ""
+  
+  Select Case pWhichOne
+  
+  Case "Front End Current"
+  
+    '** Get the Minimum Front-End Version - so that we can force the users with old versions to upgrade.
+    Set grec = CurrentDb.OpenRecordset("qrySystem_ReleaseNotes_Application_SORTED")
+    If Not grec.EOF Then
+      If Not IsNull(grec!Version) Then
+        basGetVersion = grec!Version
+      End If
+    End If
+    
+  End Select
+  
+  
+Generic_Exit:
+
+  Set grec = Nothing
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+      
+End Function
+
+Public Function basGetMinimumFrontEndVersion() As String
+
+  On Error GoTo Generic_Err
+
+  basGetMinimumFrontEndVersion = ""
+  
+  '** Get the Minimum Front-End Version - so that we can force the users with old versions to upgrade.
+  Set grec = CurrentDb.OpenRecordset("qrySystem_Parameters")
+  If Not grec.EOF Then
+    If Not IsNull(grec!MinimumRequired_FrontEnd_Version) Then
+      basGetMinimumFrontEndVersion = grec!MinimumRequired_FrontEnd_Version
+    End If
+  End If
+    
+  Set grec = Nothing
+
+Generic_Exit:
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+      
+End Function
+
+Public Function basGetAppAbbrev() As String
+  
+  On Error GoTo Generic_Err
+  
+  Dim intReturn As Integer
+  
+  Set grec = CurrentDb.OpenRecordset("SELECT AppAbbrev FROM tblSystem_Parameters", DB_READONLY, DB_FORWARDONLY)
+  If grec.RecordCount = 1 Then
+    basGetAppAbbrev = grec!AppAbbrev
+  Else
+    basGetAppAbbrev = ""
+    '** Only Admin users should get this message.
+    'intReturn = Msgbox("tblSystemParameters must have 1 and only 1 record in it.", vbOKOnly, "basGetAppAbbrev in modAutoExec")
+  End If
+  
+  grec.Close
+  
+Generic_Exit:
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+        
+End Function
+
+Function basCheckCompactDate(vMinDays As Integer)
+'*************************************************************************
+'*  This function will check the Compact Date of the Data                *
+'* database and compare it to today's date. If the date is more          *
+'* than the Minimum Days (vMinDays) then a reminder message              *
+'* appears.                                                              *
+'*                                                                       *
+'* 2-9-1999   Create by Dan Bur                                          *
+'*                                                                       *
+'* Parameters: vDBName is the name of the data database file.            *
+'*              i.e. FRAME_APP.MDB                                       *
+'*             vMinDays is the number of days before the Please Compact  *
+'*              your Data Database message appears during AutoExec       *
+'*              execution.                                               *
+'*                                                                       *
+'*       Note: This routine should only run after the AutoExec has run   *
+'*             and checked to see if the table links are still valid.    *
+'*************************************************************************
+
+On Error GoTo basCompactDate_Errors       'Turn On Error Trapping.
+
+Dim dtCompactDate As Date, intResults As Integer, strMsg As String
+Dim recCD As Recordset
+
+
+'** Temporarily exit for now.
+Exit Function
+
+
+
+Set recCD = CurrentDb.OpenRecordset("tblSystem_CompactDate_DataDatabase")
+dtCompactDate = recCD![Compact Date]
+
+
+If (DateDiff("d", dtCompactDate, Now)) > vMinDays Then
+  MsgBox "Data Database has not been compacted for a long time. See your Database Administrator.", 48, "Check Compact Date"
+  'Msgbox "Data Database has not been compacted for a long time. See your Database Administrator or click Compact Data Database in the Database Maintenance application.", 48, "Check Compact Date"
+End If
+
+recCD.Close
+
+basCompactDate_Errors:
+  
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      strMsg = "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "The error occurred in AutoExec in modAutoExec - Functions" & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support."
+      MsgBox strMsg, vbOKOnly, gstrApplicationName & " - basCheckCompactDate in modAutoExec"
+      Exit Function
+    End If
+  End Select
+  
+
+End Function
+
+Function basInitializeGlobalVariables()
+
+  '***************************************************************************************
+  '** basInitializeGlobalVariables - Sets or Resets all global objects and variables.
+  '**
+  '**    This function runs from the AutoExec function called from Autoexec when the user
+  '** starts the application. It will also run when the user experiences an End Debug error
+  '** and the error handler calls this function to reset the global variables.
+  '**
+  '** Modified DB 04/27/05 - Took out BlankLine variable. Replaced it with vbCRLF & vbCRLF.
+  '**
+  '***************************************************************************************
+   
+  '** Set the global database object.
+  
+  gReportHasNoData = False
+
+  '** This may need to restore the User global variables as well.
+  
+  
+End Function
+Function basAutoExec() As Integer
+
+'******************************************************************************************
+'** Desc:       Runs at database initialization only. This routine will do               **
+'**             the following;                                                           **
+'**                            Clear the status bar and show or hide toolbars.           **
+'**                            Display a Splash screen.                                  **
+'**                            Initialize some Database global variables.                **
+'**                            Initialize some querydef and other variables.             **
+'**                            Checks for Error Log Database.                            **
+'**                            Gets User Information.                                    **
+'**                            Displays the Main Menu.                                   **
+'**                                                                                      **
+'** Called by:  AutoExec macro.                                                          **
+'** Calls:                                                                               **
+'**                                                                                      **
+'** Author:     Dan Bur                                                                  **
+'** Revisions:                                                                           **
+'**                                                                                      **
+'** Accepts:    - pintShowToolBars - This allows you to turn them on and off from the    **
+'**                                  the AutoExec macro.                                 **
+'**               pstrConnect      - This allows you to change the connect string from   **
+'**                                  the AutoExec macro.                                 **
+'**                                  i.e. ODBC;DSN=Pubs                                  **
+'** Returns:    -                                                                        **
+'******************************************************************************************
+
+
+  Dim strMsg As String
+    
+  On Error GoTo basAutoExec_Err
+  
+  
+  '* Set any global variables.
+  basInitializeGlobalVariables
+  
+  gstrApplicationName = "Access Database"
+  
+  '*** Check to see if the Attachments are still valid links.
+  Set gqdf = CurrentDb.CreateQueryDef("")    '** For Action Queries in Application
+  Set grec = CurrentDb.OpenRecordset("SELECT AppAbbrev, AppName FROM tblSystem_Parameters", DB_READONLY, DB_FORWARDONLY)
+  If grec.RecordCount > 0 Then
+    If Not IsNull(grec!AppName) Then
+      gstrApplicationName = grec!AppName
+    Else
+      gstrApplicationName = ""
+    End If
+  Else
+    gstrApplicationName = ""
+  End If
+  grec.Close
+      
+    
+basAutoExec_PostError:
+      
+  '** Open the Main Menu
+  DoCmd.OpenForm "frmMenu_Main"
+  
+  
+  basAutoExec = True
+
+
+basAutoExec_Exit:
+
+  DoCmd.Hourglass False
+  Exit Function
+
+basAutoExec_Err:
+
+  DoCmd.Hourglass False
+  Application.Echo True
+
+  Const ERR_Tables_not_Attached = 3011
+  'Undefined objects.
+  
+  Const ERR_Tables_Attached_Else_Where = 3024
+  'Can not find Attached table, they moved the Data Database.
+  
+  Const ERR_Tables_Attached_Invalid_Path = 3044
+  'Can not find Attached table, Invalid path.
+
+  '*** The Attachments are not connecting to the database, Try to Refresh Links
+    
+  Select Case Err
+  Case ERR_Tables_not_Attached
+    strMsg = "You must first manually attach each table in the Front-End Database. Call your Access Support person."
+    MsgBox strMsg, vbOKOnly, gstrApplicationName
+    basAutoExec = False
+    Resume basAutoExec_Exit
+    
+  Case ERR_Tables_Attached_Else_Where
+    DoCmd.OpenForm "frmRefreshDatabaseLinks_PopUp", , , , , acDialog, "AutoExec"
+    '** if basRefreshAttachments is not successful then it will exit Access.
+    Resume basAutoExec_PostError
+    
+  Case ERR_Tables_Attached_Invalid_Path
+    DoCmd.OpenForm "frmRefreshDatabaseLinks_PopUp", , , , , acDialog, "AutoExec"
+    '** if basRefreshAttachments is not successful then it will exit Access.
+    Resume basAutoExec_PostError
+
+  Case 3042  '** Out of MS-DOS File Handles.
+    DoCmd.OpenForm "frmRefreshDatabaseLinks_PopUp", , , , , acDialog, "AutoExec"
+    '** if basRefreshAttachments is not successful then it will exit Access.
+    Resume basAutoExec_PostError
+    
+  Case 3051  '** At BCBSMN in Waterview
+    DoCmd.OpenForm "frmRefreshDatabaseLinks_PopUp", , , , , acDialog, "AutoExec"
+    '** if basRefreshAttachments is not successful then it will exit Access.
+    Resume basAutoExec_PostError
+    
+  Case Else
+    If (Err <> 0) Then
+      strMsg = "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "The error occurred in AutoExec in modAutoExec - Functions" & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support."
+      MsgBox strMsg, vbOKOnly, gstrApplicationName & " - basAutoExec in modAutoExec"
+      Exit Function
+    End If
+  End Select
+  
+  basAutoExec = False
+  Resume basAutoExec_Exit
+
+End Function
+
+Function basTable_Listing()
+
+  '** ? basTable_Listing()
+  
+  Dim recTables As Recordset
+  Dim qdfRowCount As QueryDef, recRowCount As Recordset
+  Dim tdfTable As TableDef
+  Dim strTable_Type As String, strSQL As String, lngRowCount As Long
+  
+  Set recTables = CurrentDb.OpenRecordset("qryMSysObjects - Table Listing")
+
+  While Not recTables.EOF
+   
+    Set tdfTable = CurrentDb.CreateTableDef(recTables!Name)
+    
+    Select Case recTables!Type
+    Case 1
+      strTable_Type = "Local Access Table"
+    Case 4
+      strTable_Type = "Attachment to ODBC"
+    Case 6
+      strTable_Type = "Attached Access Table"
+    End Select
+ 
+ 
+    Select Case recTables!Name
+    Case "f_9E8203D96A754B0890DAF9414007C362_Data", "MSysComplexType_Attachment", "MSysComplexType_Decimal"
+      lngRowCount = 0
+    Case Else
+    
+      If Left(recTables!Name, 11) = "MSysComplex" Then
+        lngRowCount = 0
+      Else
+      
+        '** Find the number of Rows in a table.
+        Set qdfRowCount = CurrentDb.QueryDefs("qryTable_Row_Count")
+        strSQL = "SELECT Count(*) AS [Row_Count] FROM " & recTables!Name
+        qdfRowCount.SQL = strSQL
+        Set recRowCount = qdfRowCount.OpenRecordset()
+        If Not recRowCount.EOF Then
+          lngRowCount = recRowCount!Row_Count
+        Else
+          lngRowCount = 0
+        End If
+      
+      End If
+      
+    End Select
+    
+    Debug.Print recTables!Name & " - " & strTable_Type & " - " & lngRowCount
+  
+    recTables.MoveNext
+
+  Wend
+  
+  Set recTables = Nothing
+  Set tdfTable = Nothing
+  
+End Function
+Function basRefreshAttachments(pstrConnect As String)
+'**********************************************************************************************
+'** Desc:       Refreshes the attachments, by deleting them and then reattaching them.        *
+'**             Or if the attachments are to access tables then it refreshes the links.        *
+'**                                                                                           *
+'** Called by:  mcrRefreshAttachments                                                         *
+'** Calls:      -                                                                             *
+'** Author:     Dan Bur                                                                       *
+'** Revisions:  -                                                                             *
+'** Accepts:    pstrConnect = ie "C:\Apps\AppName_Data.MDB" or "ODBC;DSN=PUBS;;DATABASE=;"       *
+'**                                                                                           *
+'** Returns:    -                                                                             *
+'**********************************************************************************************
+
+  
+  Dim strTableName As String, strBaseTable As String, strQualifier As String
+  Dim intX As Integer, strMsg As String
+      
+  Dim recRA As Recordset
+  Dim tdf As TableDef
+  
+  
+  On Error GoTo basRefreshAttachments_Err
+        
+  
+  If pstrConnect = "" Then
+    DoCmd.OpenForm "frmPAR_RefreshDatabaseLinks", , , , , acDialog
+    pstrConnect = Forms![frmPAR_RefreshDatabaseLinks]![txtConnectString]
+    
+    '** If they clicked the X to close the form, then consider it a Cancel.
+    If Not basIsLoaded("frmPAR_RefreshDatabaseLinks") Then
+      pstrConnect = "Cancel"
+    End If
+    
+    If pstrConnect = "Cancel" Then
+      strMsg = "You must re-attach the Front-End database to the Data database before using this database application. Aborting."
+      MsgBox strMsg, vbOKOnly, gstrApplicationName & "- basRefreshAttachments - modAutoExec"
+      '** OK is their only option, so reset the Echo and exit Access.
+      'Application.Echo True
+      DoCmd.Hourglass False
+      Application.Quit acQuitPrompt
+    End If
+  End If
+    
+   
+  Set recRA = CurrentDb.OpenRecordset("qryMSysObjects - Table Listing")
+
+  While Not recRA.EOF
+
+    
+    If recRA!Type = 4 Then  '*** ODBC Attachments
+      '*** First save the table name, seperate out the SQL database qualifier from table name, build tablename.
+      strTableName = recRA!Name
+      strQualifier = Left$(strTableName, (InStr(1, strTableName, "_") - 1))
+      strBaseTable = Right$(strTableName, (Len(strTableName) - InStr(1, strTableName, "_")))
+      strBaseTable = strQualifier & "." & strBaseTable
+
+      intX = SysCmd(SYSCMD_SETSTATUS, "Refreshing Attachments: " & strTableName)
+
+      '**** Now delete the attachment, build the attachment and then append it to the table collection.
+      DoCmd.DeleteObject A_TABLE, strTableName
+      Set tdf = CurrentDb.CreateTableDef(strTableName)
+      tdf.Connect = pstrConnect
+      tdf.SourceTableName = strBaseTable
+      CurrentDb.TableDefs.Append tdf
+    End If
+    
+    If recRA!Type = 6 Then  '*** Attachments to other Access Databases
+
+      'DoCmd.Echo False, "Re-Attaching Table: " & recRA!Name
+      Set tdf = CurrentDb.TableDefs(recRA!Name)
+      tdf.Connect = (";DATABASE=" + pstrConnect)
+      CurrentDb.TableDefs(recRA!Name).RefreshLink
+      
+    End If
+    
+    recRA.MoveNext
+
+  Wend
+
+  recRA.Close
+
+  intX = SysCmd(SYSCMD_CLEARSTATUS)
+
+
+basRefreshAttachments_Exit:
+
+  Application.Echo True
+  DoCmd.Hourglass False
+  Exit Function
+
+basRefreshAttachments_Err:
+
+  DoCmd.Hourglass False
+  Application.Echo True
+
+  '*** Can not locate Data Database, i.e. file name does not exists.
+  If Err = 3024 Then
+    strMsg = "Still can not find location and name of Data Database. Double check the location and name and retry running this application." & vbCrLf & vbCrLf & pstrConnect
+    MsgBox strMsg, vbOKOnly, gstrApplicationName & "- basRefreshAttachments - modAutoExec"
+    Application.Quit A_EXIT
+  End If
+  
+  '*** Invalid File Name, i.e. drive letter does not exist.
+  If Err = 3055 Or Err = 3044 Then
+    strMsg = "Invalid drive letter or server name. Double check the drive letter or server name and retry running this application." & vbCrLf & vbCrLf & pstrConnect
+    MsgBox strMsg, 48, gstrApplicationName & "- basRefreshAttachments - modAutoExec"
+    Application.Quit A_EXIT
+  End If
+  
+  '*** Invalid Attachment
+  If Err = 3011 Then
+    strMsg = "The following attachment does not have a corresponding table in the data database. Reattach this attachment manually and retry running this application." & vbCrLf & vbCrLf & recRA!Name
+    MsgBox strMsg, vbOKOnly, gstrApplicationName & "- basRefreshAttachments - modAutoExec"
+    Application.Quit A_EXIT
+  End If
+  
+  strMsg = "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+            vbCrLf & vbCrLf & "The error occurred in basRefreshAttachments in modAutoExec - Functions" & _
+            vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+          " and then contact technical support." & _
+            vbCrLf & vbCrLf & "Table Name: " & recRA!Name
+  MsgBox strMsg, vbOKOnly, gstrApplicationName & " - basAutoExec in modAutoExec"
+    
+  Application.Quit A_EXIT
+
+End Function
+
+Function basShowToolBars(pintShowToolBars As Boolean)
+
+  '*** Show toolbars depending on the parameter entered in the AutoExec macro.
+  If pintShowToolBars Then
+    DoCmd.ShowToolbar "Form View", acToolbarWhereApprop
+    DoCmd.ShowToolbar "Print Preview", acToolbarWhereApprop
+    DoCmd.ShowToolbar "Menu Bar", acToolbarYes
+  Else
+    DoCmd.ShowToolbar "Form View", acToolbarNo
+    DoCmd.ShowToolbar "Print Preview", acToolbarNo
+    DoCmd.ShowToolbar "Menu Bar", acToolbarNo
+  End If
+  
+End Function
+Option Compare Database
+
+Function basGetFiles(pPersonID As Long, pstrFolder As String) As Integer
+
+  On Error GoTo Generic_Err
+
+
+  '** ? basGetFiles("C:\MVQS_Database\Reports\Dan's Consulting, Inc\Dans_Test\*.pdf")
+  
+  '** ? basGetFiles("C:\MVQS_Database\Reports\DC\Dans_Test\*.pdf")
+
+  Dim strFileName As String, intFileCount As Integer
+  Dim qdfFiles_to_Merge_Delete As QueryDef, rsFiles_to_Merge As Recordset
+  
+  
+  Set qdfFiles_to_Merge_Delete = CurrentDb.QueryDefs("qryFiles_to_Merge_DELETE_ALL")
+  qdfFiles_to_Merge_Delete.Execute
+    
+  Set rsFiles_to_Merge = CurrentDb.OpenRecordset("tblFiles_to_Merge")
+  
+  
+  strFileName = Dir(pstrFolder, vbDirectory)
+  
+  intFileCount = 0
+  
+  Do While strFileName <> ""
+  
+    If strFileName <> "." And strFileName <> ".." Then
+      Debug.Print strFileName
+      
+      If Left(strFileName, 3) = "rpt" Then
+        
+        intFileCount = intFileCount + 1
+        
+        '** Add the file name to the table
+        rsFiles_to_Merge.AddNew
+        rsFiles_to_Merge!PersonID = pPersonID
+        rsFiles_to_Merge!File_Name = strFileName
+        rsFiles_to_Merge!Sort_Order = intFileCount
+        rsFiles_to_Merge.Update
+      End If
+      
+      
+    End If
+    strFileName = Dir()
+    
+  Loop
+   
+   
+  basGetFiles = intFileCount
+
+ 
+
+Generic_Exit:
+
+  rsFiles_to_Merge.Close
+  Set rsFiles_to_Merge = Nothing
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+      
+End Function
+
+
+
+
+Function basCombined_PDFs_using_PDFtk()
+
+
+
+    If InStr(Environ("Path"), "pdftk") = 0 Then
+        MsgBox "It appears that PDF tool kit is not installed on this computer.  " & _
+                "Please refer to user guide for instructions on how to install it. " & _
+                "This program is needed in order to merge pdf files.", vbExclamation + vbOKOnly, "Missing Program PDFtk"
+        MergeRFI = ""
+        Exit Function
+    End If
+
+
+    stMergeFiles = Chr(34) & PDFName1 & Chr(34) & " " & Chr(34) & PDFName2 & Chr(34) & " cat output " & Chr(34) & Replace(PDFName1, ".pdf", "M.pdf" & Chr(34))
+
+
+    retVal = Shell("pdftk " & stMergeFiles, vbMaximizedFocus)
+        MsgBox "Please wait for pdftk 'BLACK SCREEN' to close and then press OK to continue." & vbCrLf & vbCrLf & "Note:Big files may take longer to merge.  Please be patient", vbOKOnly + vbExclamation, "Files Merged"
+        DoEvents
+
+
+
+End Function
+Option Compare Database
+
+
+Public Function basMergePDFs(pstrFolder As String, pstrDestFile As String) As Integer
+  
+  '** ? basMergePDFs("C:\MVQS_Database\Reports\Dan's Consulting, Inc\Dan_Test","C:\MVQS_Database\Reports\Dan's Consulting, Inc\Dan_Test\MF2.PDF")
+  
+  '** ? basMergePDFs("C:\MVQS_Database\Reports\DC\Dan_Test","C:\MVQS_Database\Reports\Dan_Test\MF2.PDF")
+  
+  '** ? basMergePDFs("C:\MVQS_Database\Reports\Dan's Consulting, Inc\Dan_Test","C:\MVQS_Database\Reports\Kari Brustad\Dan_Smith\MF2.PDF")
+
+  On Error GoTo Generic_Err
+
+
+  Dim intFileCount As Integer, strFull_File_Name As String, strFull_Dest_File_Name As String, strMerged_Documents As String, intNo_of_Pages As Integer
+  Dim rsFiles_to_Merge As Recordset
+      
+  '** Get the list of PDF files found in the folder by basGetFiles(folder)
+  
+  DoCmd.Hourglass True
+  
+  'Relies on the Adobe Acrobat X.X Type Library - just add Tools->References->Acrobat and it will work, accordingly
+  Dim objAcroApp As Object
+  Dim objCAcroPDDocDest As Object
+  Dim objCAcroPDDocSource As Object
+
+
+  'Initialize the objects - The User will need Adobe Acrobat Pro installed for this.
+  'Set objAcroApp = CreateObject("AcroExch.App")
+
+  Set objCAcroPDDocDest = CreateObject("AcroExch.PDDoc")
+  
+  
+  intFileCount = 0
+
+  strMerged_Documents = ""
+
+  '** Get the first file and add it.
+  'Open Destination, all other documents will be added to this and saved with a new filename
+
+  '** Open list of files to put together
+  Set rsFiles_to_Merge = CurrentDb.OpenRecordset("qryFiles_to_Merge_SORTED")
+  
+  If Not rsFiles_to_Merge.EOF Then
+    strFull_File_Name = pstrFolder & "\" & rsFiles_to_Merge!File_Name
+    
+    If IsNull(rsFiles_to_Merge!No_of_Pages) Then
+      intNo_of_Pages = 1
+    Else
+      intNo_of_Pages = rsFiles_to_Merge!No_of_Pages
+    End If
+    If objCAcroPDDocDest.Open(strFull_File_Name) Then
+      strMerged_Documents = rsFiles_to_Merge!File_Name
+      intFileCount = intFileCount + 1
+      rsFiles_to_Merge.MoveNext
+    End If
+  End If
+      
+
+  '** Loop thru the rest of the files
+  
+  While Not rsFiles_to_Merge.EOF
+    
+    intFileCount = intFileCount + 1
+    
+    strFull_File_Name = pstrFolder & "\" & rsFiles_to_Merge!File_Name
+    If IsNull(rsFiles_to_Merge!No_of_Pages) Then
+      intNo_of_Pages = 1
+    Else
+      intNo_of_Pages = rsFiles_to_Merge!No_of_Pages
+    End If
+    
+    'Open the source document that will be added to the destination
+    Set objCAcroPDDocSource = CreateObject("AcroExch.PDDoc")
+    objCAcroPDDocSource.Open (strFull_File_Name)
+      
+    Debug.Print strFull_File_Name
+        
+    If objCAcroPDDocDest.InsertPages(objCAcroPDDocDest.GetNumPages - 1, objCAcroPDDocSource, 0, objCAcroPDDocSource.GetNumPages, 0) Then
+      'If objCAcroPDDocDest.InsertPages(objCAcroPDDocDest.GetNumPages - 1, objCAcroPDDocSource, 0, objCAcroPDDocSource.GetNumPages, 0) Then
+      strMerged_Documents = strMerged_Documents & vbCrLf & rsFiles_to_Merge!File_Name
+      'MsgBox "Documents Merged!"
+    Else
+      ' problem
+    End If
+
+    rsFiles_to_Merge.MoveNext
+        
+    objCAcroPDDocSource.Close
+    Set objCAcroPDDocSource = Nothing
+          
+  Wend
+     
+  'strFull_Dest_File_Name = pstrFolder & "\" & pstrDestFile
+  
+  strFull_Dest_File_Name = pstrDestFile
+  
+  'Now Save the file as the Destination File from the function call.
+  'objCAcroPDDocDest.Save 1, strFull_Dest_File_Name
+  
+  If objCAcroPDDocDest.Save(1, strFull_Dest_File_Name) Then
+    'MsgBox "Saved"
+  End If
+  
+  
+  'Doc01.Save(PDSaveFull, sPfad00)
+
+  MsgBox intFileCount & " documents, " & _
+         vbCrLf & strMerged_Documents & _
+         vbCrLf & "merged into " & pstrDestFile
+
+  basMergePDFs = intFileCount
+  
+  DoCmd.Hourglass False
+  
+
+Generic_Exit:
+
+  rsFiles_to_Merge.Close
+  Set rsFiles_to_Merge = Nothing
+  
+  'objCAcroPDDocSource.Close
+  objCAcroPDDocDest.Close
+  
+  Set objCAcroPDDocSource = Nothing
+  Set objCAcroPDDocDest = Nothing
+
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+  
+End Function
+
+Option Compare Database
+Option Explicit
+
+Sub basEH()
+
+  
+'** This function is solely to provide an example of error trapping
+'** so that the developer can copy it to all the different places
+'** using a standard error trapping routine.
+
+'** Note that Exit Sub may need to be changed to Exit Function.
+
+
+  On Error GoTo Generic_Err
+
+Generic_Exit:
+
+  Exit Sub
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+  
+  
+End Sub
+Option Compare Database
+
+
+
+Public Function basCalculate_VQ(pPersonID As Long, pProfileTitle As String) As Double
+
+   '** ? basCalculate_VQ(28,"Work History Profile")
+   '** ? basCalculate_VQ(28,"Evaluative Profile")
+   '** ? basCalculate_VQ(28,"Pre Profile")
+   '** ? basCalculate_VQ(28,"Post Profile")
+   
+  On Error GoTo Generic_Err
+
+  basCalculate_VQ = 0
+  
+    Dim strGFactor As String
+    Dim X As Double
+    Dim R As Double
+    Dim M As Double
+    Dim L As Double
+    Dim S As Double
+    Dim P As Double
+    Dim Q As Double
+    Dim K As Double
+    Dim F As Double
+    Dim MA As Double
+    Dim E As Double
+    Dim C As Double
+    Dim P1 As Double
+    Dim P2 As Double
+    Dim P3 As Double
+    Dim P4 As Double
+    Dim P5 As Double
+    Dim P6 As Double
+    Dim E1 As Double
+    Dim E2 As Double
+    Dim E3 As Double
+    Dim E4 As Double
+    Dim E5 As Double
+    Dim E6 As Double
+    
+    R = 5.299567
+    M = 2.213121
+    L = 1.424168
+    S = 2.241977
+    P = 1.783972
+    Q = 1.95779
+    K = 1.648707
+    F = 1.631036
+    MA = 2.126616
+    E = 1.403101
+    C = 1.431217
+    P1 = 1.84953
+    P2 = 0.774892
+    P3 = -0.165864
+    P4 = 0.776669
+    P5 = 4.542681
+    P6 = 0.201044
+    E1 = 1.470938
+    E2 = 0.330026
+    E3 = 0.504727
+    E4 = 0.371165
+    E5 = 1.217675
+    E6 = -0.200072
+    E7 = 0.298293
+    
+    '** X Factor?
+    X = 34.56707
+    
+    '** 1 - Get the exact Evaluee_Profile record and Update the VQ field.
+    Set gqdf = CurrentDb.QueryDefs("qryEvaluee_Profiles_WHE_pPersonID_pProfileTitle")
+    gqdf.Parameters("pPersonID") = pPersonID
+    gqdf.Parameters("pProfileTitle") = pProfileTitle
+    Set grec = gqdf.OpenRecordset()
+    
+    If grec.EOF Then
+      MsgBox "No Evaluee Profile record exists. ", , "MVQS Database - basCalculate_VQ()"
+      Exit Function
+    End If
+    
+    ' Calculate Work History Profile VQ
+    X = X + (grec!Reasoning * R)
+    X = X + (grec!Math * M)
+    X = X + (grec!Language * L)
+    X = X + (grec!Spatial * S)
+    X = X + (grec!Form * P)
+    X = X + (grec!Clerical * Q)
+    X = X + (grec!Motor * K)
+    
+    X = X + (grec!Finger * F)
+    X = X + (grec!Manual * MA)
+    X = X + (grec![Eye-Hand-Foot] * E)
+    X = X + (grec!Color * C)
+    X = X + (grec!Strength * P1)
+    X = X + (grec!Climb_Balance * P2)
+    X = X + (grec!Stoop_Kneel * P3)
+    X = X + (grec!Reach_Handle * P4)
+    X = X + (grec!Talk_Hear * P5)
+    X = X + (grec!See * P6)
+    X = X + (grec!Out_In_Both * E1)
+    X = X + (grec!Cold * E2)
+    X = X + (grec!Heat * E3)
+    X = X + (grec!Wet * E4)
+    X = X + (grec!Vibrations * E5)
+    X = X + (grec!Hazards * E6)
+    X = X + (grec!Dust_Fumes * E7)
+    
+    grec.Edit
+    grec!VQ = X
+    grec.Update
+    
+   
+    '** Get the Evaluee_Master_Profile record and Update the right VQ field
+    Dim qVQ As QueryDef
+    Select Case pProfileTitle
+    Case "Work History Profile"
+      Set qVQ = CurrentDb.QueryDefs("qryEvaluee_Profile_Master_UPD_VQ_WHE_pPersonID_pVQ")
+    Case "Evaluative Profile"
+      Set qVQ = CurrentDb.QueryDefs("qryEvaluee_Profile_Master_UPD_EVQ_WHE_pPersonID_pVQ")
+    Case "Pre Profile"
+      Set qVQ = CurrentDb.QueryDefs("qryEvaluee_Profile_Master_UPD_PrVQ_WHE_pPersonID_pVQ")
+    Case "Post Profile"
+      Set qVQ = CurrentDb.QueryDefs("qryEvaluee_Profile_Master_UPD_PoVQ_WHE_pPersonID_pVQ")
+    End Select
+        
+    qVQ.Parameters("pPersonID") = pPersonID
+    qVQ.Parameters("pVQ") = X
+    qVQ.Execute
+
+    
+    basCalculate_VQ = X
+    
+
+Generic_Exit:
+
+  Set gqdf = Nothing
+  Set grec = Nothing
+
+  Set qVQ = Nothing
+  
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+
+End Function
+
+
+
+Public Function basCalc_MTSP(plongPersonID As Long) As Integer
+
+   '** ? basCalc_MTSP(64)
+   
+  On Error GoTo Generic_Err
+
+  basCalc_MTSP = 0
+  
+ 
+  '********************************************************************
+  '** Calculate the TSP
+  '********************************************************************
+  
+    Dim dblVQ As Double
+    Dim intTSP As Integer
+    Dim intHoldTSP As Integer
+    Dim strDot3 As String
+    Dim strOnet5 As String
+    Dim strDot2 As String
+    Dim strOnet4 As String
+    Dim strDot1 As String
+    Dim strOnet2 As String
+    Dim strSIC As String
+    Dim strSOC As String
+    Dim strCEN As String
+    Dim strMPSMS As String
+    Dim strWF1 As String
+    Dim strInd1 As String
+    Dim strInd2 As String
+    Dim strInd3 As String
+    Dim strInd4 As String
+    Dim intCount As Integer
+    Dim intTSP10 As Integer
+    Dim intTSPPercent As Double
+    Dim intPreCount As Long
+    Dim intPostCount As Long
+    
+    intCount = 0
+    dblVQ = 85
+  
+  
+'*****************************************************************
+'** Pre Jobs
+'*****************************************************************
+  
+    
+  '** 1 - Go thru each Pre Job and calc something
+  Dim lngPre_Job_Count As Long
+  Dim qdfPre_Jobs As QueryDef, recPre_Jobs As Recordset
+  Set qdfPre_Jobs = CurrentDb.QueryDefs("qryEvaluee_Pre_Jobs_WHE_pPersonID")
+  qdfPre_Jobs.Parameters("pPersonID") = plongPersonID
+  Set recPre_Jobs = qdfPre_Jobs.OpenRecordset()
+    
+  lngPre_Job_Count = recPre_Jobs.RecordCount
+  
+  If lngPre_Job_Count = 0 Then
+    GoTo PostJobMatchesStart
+  End If
+  
+
+  '** 2 - Setup query to look at Evaluee Occupations, Work History or Job history.
+  Dim qdfJobHistory As QueryDef, recJobHistory As Recordset
+  
+  Set qdfJobHistory = CurrentDb.QueryDefs("qryEvaluee_Occupations_WHE_pPersonID")
+  qdfJobHistory.Parameters("pPersonID") = plongPersonID
+  Set recJobHistory = qdfJobHistory.OpenRecordset()
+        
+   
+
+  While Not recPre_Jobs.EOF
+    
+    Debug.Print "Pre - " & recPre_Jobs!Dot_Code
+    
+    intTSP = 0
+    intHoldTSP = 0
+      
+    'Set the comparison strings for Transferable Skills determination
+     
+    strDot3 = Left(recPre_Jobs![Dot_Code], 3)
+    strDot2 = Left(recPre_Jobs![Dot_Code], 2)
+    strDot1 = Left(recPre_Jobs![Dot_Code], 1)
+        
+    strOnet5 = Left(recPre_Jobs!ONETCODE, 5)
+    strOnet4 = Left(recPre_Jobs!ONETCODE, 4)
+    strOnet2 = Left(recPre_Jobs!ONETCODE, 2)
+       
+    strSIC = recPre_Jobs!SIC
+    strSOC = recPre_Jobs!SOC
+    strCEN = recPre_Jobs!CEN
+        
+    strMPSMS = recPre_Jobs![MPSMS1]
+    strWF1 = recPre_Jobs![WF1]
+    strInd1 = recPre_Jobs!Ind1
+ 
+    
+    recJobHistory.MoveFirst
+      
+    While Not recJobHistory.EOF
+    
+      Debug.Print "Job History - " & recJobHistory!Dot_Code
+    
+
+      'Test for VQ less than 85
+      If recPre_Jobs!VQ < dblVQ Then
+        intTSP = 0
+        'GoTo TSPUpdate40Pre
+      Else
+        
+        intTSP = 10
+        'intHoldTSP = 10
+            
+        'Test for TSP level of 20
+        If Left(recJobHistory![Dot_Code], 2) = strDot2 Then
+          intTSP = 20
+        Else
+          If Left(recJobHistory!ONETCODE, 4) = strOnet4 Then
+            intTSP = 20
+          Else
+            If Left(recJobHistory![Dot_Code], 1) = strDot1 Then
+              If Left(recJobHistory!ONETCODE, 2) = strOnet2 Then
+                intTSP = 20
+              End If
+                
+            End If
+          End If
+        End If
+            
+        'Test for TSP level of 30
+        If (Left(recJobHistory![Dot_Code], 3) = strDot3) Then
+          intTSP = 30
+        Else
+          If (Left(recJobHistory!ONETCODE, 5) = strOnet5) Then
+            intTSP = 30
+          Else
+            If (Left(recJobHistory![Dot_Code], 2) = strDot2) Then
+              If Left(recJobHistory!ONETCODE, 4) = strOnet4 Then
+                intTSP = 30
+              End If
+            End If
+          End If
+        End If
+        
+        'Test for TSP level of 40
+        If (Left(recJobHistory![Dot_Code], 3) = strDot3) Then
+          If Left(recJobHistory!ONETCODE, 5) = strOnet5 Then
+            intTSP = 40
+          End If
+        End If
+
+       'Test for TSP > 40
+        If intTSP > 40 Then
+          intTSP = 40
+          'MsgBox "Setting TSP first digit to 40"
+        End If
+                   
+            
+      End If '** Is This JOb History - VQ less than 85
+      
+
+    'Test for Second Digit Matches
+    
+        If recJobHistory!SIC = strSIC Then
+            intTSP = intTSP + 1
+        End If
+        
+        If recJobHistory!SOC = strSOC Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory!CEN = strCEN Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory![MPSMS1] = strMPSMS Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory![WF1] = strWF1 Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory!Ind1 = strInd1 Then
+            intTSP = intTSP + 1
+        End If
+
+
+    'Test for TSP > 46
+        If intTSP > 46 Then
+            intTSP = 46
+            'MsgBox "Resetting TSP to 46"
+        End If
+
+
+    'Update the holdTSP if the TSP for the current job if higher
+    
+        If intTSP > intHoldTSP Then
+            intHoldTSP = intTSP
+        End If
+           
+ 
+      recJobHistory.MoveNext
+    
+    Wend
+    
+    
+    If intHoldTSP > 39 Then
+        intTSP10 = 4
+    End If
+    If intHoldTSP > 29 Then
+        If intHoldTSP < 40 Then
+            intTSP10 = 3
+        End If
+    End If
+    If intHoldTSP > 19 Then
+        If intHoldTSP < 30 Then
+            intTSP10 = 2
+        End If
+    End If
+    If intHoldTSP > 9 Then
+        If intHoldTSP < 20 Then
+            intTSP10 = 1
+        End If
+    End If
+    If intHoldTSP > 0 Then
+        If intHoldTSP < 10 Then
+            intTSP10 = 0
+        End If
+    End If
+    
+    
+    If intHoldTSP = 0 Then
+        intTSPPercent = 0
+    Else
+        intTSPPercent = ((intHoldTSP - (intTSP10 * 3)) / 35) * 100
+    End If
+    
+    If intTSPPercent > 98 Then
+        'MsgBox "The Hold TSP Value = " & intHoldTSP
+    End If
+
+    recPre_Jobs.Edit
+        recPre_Jobs!TSP = intTSPPercent
+    recPre_Jobs.Update
+      
+
+    recPre_Jobs.MoveNext
+    
+  Wend
+  
+  
+  
+  
+  
+'*****************************************************************
+'** Post Jobs
+'*****************************************************************
+
+PostJobMatchesStart:
+      
+     
+  '** 3 - Go thru each Post Job and calc something
+  Dim lngPost_Job_Count As Long
+  Dim qdfPost_Jobs As QueryDef, recPost_Jobs As Recordset
+  Set qdfPost_Jobs = CurrentDb.QueryDefs("qryEvaluee_Post_Jobs_WHE_pPersonID")
+  qdfPost_Jobs.Parameters("pPersonID") = plongPersonID
+  Set recPost_Jobs = qdfPost_Jobs.OpenRecordset()
+    
+  lngPost_Job_Count = recPost_Jobs.RecordCount
+  
+  If lngPost_Job_Count = 0 Then
+    GoTo PostJobMatchesEnds
+  End If
+  
+  
+  While Not recPost_Jobs.EOF
+    
+    Debug.Print "Post - " & recPost_Jobs!Dot_Code
+    
+    intTSP = 0
+    intHoldTSP = 0
+      
+    'Set the comparison strings for Transferable Skills determination
+     
+    strDot3 = Left(recPost_Jobs![Dot_Code], 3)
+    strDot2 = Left(recPost_Jobs![Dot_Code], 2)
+    strDot1 = Left(recPost_Jobs![Dot_Code], 1)
+        
+    strOnet5 = Left(recPost_Jobs!ONETCODE, 5)
+    strOnet4 = Left(recPost_Jobs!ONETCODE, 4)
+    strOnet2 = Left(recPost_Jobs!ONETCODE, 2)
+       
+    strSIC = recPost_Jobs!SIC
+    strSOC = recPost_Jobs!SOC
+    strCEN = recPost_Jobs!CEN
+        
+    strMPSMS = recPost_Jobs![MPSMS1]
+    strWF1 = recPost_Jobs![WF1]
+    strInd1 = recPost_Jobs!Ind1
+    
+    recJobHistory.MoveFirst
+    
+    
+    While Not recJobHistory.EOF
+    
+      Debug.Print "Job History - " & recJobHistory!Dot_Code
+    
+    
+      'Test for VQ less than 85
+      If recPost_Jobs!VQ < dblVQ Then
+        intTSP = 0
+        'GoTo TSPUpdate40Pre
+      Else
+        
+        intTSP = 10
+        'intHoldTSP = 10
+            
+        'Test for TSP level of 20
+        If Left(recJobHistory![Dot_Code], 2) = strDot2 Then
+          intTSP = 20
+        Else
+          If Left(recJobHistory!ONETCODE, 4) = strOnet4 Then
+            intTSP = 20
+          Else
+            If Left(recJobHistory![Dot_Code], 1) = strDot1 Then
+              If Left(recJobHistory!ONETCODE, 2) = strOnet2 Then
+                intTSP = 20
+              End If
+                
+            End If
+          End If
+        End If
+            
+        'Test for TSP level of 30
+        If (Left(recJobHistory![Dot_Code], 3) = strDot3) Then
+          intTSP = 30
+        Else
+          If (Left(recJobHistory!ONETCODE, 5) = strOnet5) Then
+            intTSP = 30
+          Else
+            If (Left(recJobHistory![Dot_Code], 2) = strDot2) Then
+              If Left(recJobHistory!ONETCODE, 4) = strOnet4 Then
+                intTSP = 30
+              End If
+            End If
+          End If
+        End If
+        
+        'Test for TSP level of 40
+        If (Left(recJobHistory![Dot_Code], 3) = strDot3) Then
+          If Left(recJobHistory!ONETCODE, 5) = strOnet5 Then
+            intTSP = 40
+          End If
+        End If
+
+       'Test for TSP > 40
+        If intTSP > 40 Then
+          intTSP = 40
+          'MsgBox "Setting TSP first digit to 40"
+        End If
+                   
+            
+      End If '** Is This JOb History - VQ less than 85
+  
+    'Test for Second Digit Matches
+    
+        If recJobHistory!SIC = strSIC Then
+            intTSP = intTSP + 1
+        End If
+        
+        If recJobHistory!SOC = strSOC Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory!CEN = strCEN Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory![MPSMS1] = strMPSMS Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory![WF1] = strWF1 Then
+            intTSP = intTSP + 1
+        End If
+    
+        If recJobHistory!Ind1 = strInd1 Then
+            intTSP = intTSP + 1
+        End If
+
+
+    'Test for TSP > 46
+        If intTSP > 46 Then
+            intTSP = 46
+            'MsgBox "Resetting TSP to 46"
+        End If
+
+
+    'Update the holdTSP if the TSP for the current job if higher
+    
+        If intTSP > intHoldTSP Then
+            intHoldTSP = intTSP
+        End If
+
+  
+      recJobHistory.MoveNext
+    
+    Wend
+  
+    If intHoldTSP > 39 Then
+        intTSP10 = 4
+    End If
+    If intHoldTSP > 29 Then
+        If intHoldTSP < 40 Then
+            intTSP10 = 3
+        End If
+    End If
+    If intHoldTSP > 19 Then
+        If intHoldTSP < 30 Then
+            intTSP10 = 2
+        End If
+    End If
+    If intHoldTSP > 9 Then
+        If intHoldTSP < 20 Then
+            intTSP10 = 1
+        End If
+    End If
+    If intHoldTSP > 0 Then
+        If intHoldTSP < 10 Then
+            intTSP10 = 0
+        End If
+    End If
+    
+    
+    If intHoldTSP = 0 Then
+        intTSPPercent = 0
+    Else
+        intTSPPercent = ((intHoldTSP - (intTSP10 * 3)) / 35) * 100
+    End If
+    
+    If intTSPPercent > 98 Then
+        'MsgBox "The Hold TSP Value = " & intHoldTSP
+    End If
+
+    recPost_Jobs.Edit
+        recPost_Jobs!TSP = intTSPPercent
+    recPost_Jobs.Update
+    
+  
+    recPost_Jobs.MoveNext
+    
+  Wend
+  
+  
+    
+'*****************************************************************
+'** TSP Calculations Complete
+'*****************************************************************
+    
+    
+PostJobMatchesEnds:
+    
+   
+
+    'Update Client Statistics with TSP info
+
+    '** Update Client Statistics with TSP info
+    Dim qdfTSP As QueryDef, recTSP As Recordset
+
+
+    If lngPre_Job_Count = 0 Then
+    
+        '** 4 - Set all the Pre TSP values to 0
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_01_UPD_EStats_Pre_TSP_Zero_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+        
+    Else
+    
+'ZZZZZZZZZZZZ
+        '** 5 - Delete the Pre Job TSP values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_02_DEL_Pre_TSP_Levels_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+        '** 6 - Append the Pre Job TSP values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_03_APP_Pre_TSP_Levels_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+          
+        '** 7 - Delete the Pre Job TSP Summary values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_04_DEL_Pre_TSP_Summary_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+        '** 8 - Append the Pre Job TSP Summary values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_05_APP_Pre_TSP_Summary_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+        '** 9 - Update the Evaluee Statistics table with the Pre Job TSP Summary values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_06_UPD_EStats_Pre_TSP_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+        
+    End If
+
+    If lngPost_Job_Count = 0 Then
+        
+        '** 10 - Set all the Post TSP values to 0
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_10_UPD_EStats_Post_TSP_Zero_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+    Else
+    
+        '** 11 - Delete the Post Job TSP values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_12_DEL_Pos_TSP_Levels_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+        '** 12 - Append the Post Job TSP values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_13_APP_Post_TSP_Levels_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+          
+        '** 13 - Delete the Post Job TSP Summary values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_14_DEL_Post_TSP_Summary_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+        '** 14 - Append the Post Job TSP Summary values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_15_APP_Post_TSP_Summary_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+        '** 15 - Update the Evaluee Statistics table with the Post Job TSP Summary values
+        Set qdfTSP = CurrentDb.QueryDefs("qryEvaluee_Quantify_99_16_UPD_EStats_Post_TSP_WHE_pPersonID")
+        qdfTSP.Parameters("pPersonID") = plongPersonID
+        qdfTSP.Execute
+    
+    End If
+  
+
+
+  basCalc_MTSP = -1
+  
+  
+Generic_Exit:
+
+  Set qdfJobHistory = Nothing
+  Set recJobHistory = Nothing
+
+  Set qdfPre_Jobs = Nothing
+  Set recPre_Jobs = Nothing
+  
+  Set qdfPost_Jobs = Nothing
+  Set recPost_Jobs = Nothing
+    
+  Exit Function
+  
+Generic_Err:
+
+  Select Case Err
+  Case Else
+    If (Err <> 0) Then
+      MsgBox "Unrecognized error occurred. Error No: " + str(Err) + " - " + Error & _
+                vbCrLf & vbCrLf & "Please note what you were doing before this message appeared " & _
+                " and then contact technical support, " & basGetTechSupport("Primary") & ".", vbOKOnly, gstrApplicationName
+      Resume Generic_Exit
+    End If
+  End Select
+
+End Function
+
+Option Compare Database
+Option Explicit
+
+Global gstrPath As String
+Global gstrFileName As String
+Global gstrFileExtension As String
+
+
+'Old Function basGetOpenFile_CLT(strInitialDir As String, strTitle As String) As String
+
+'** New function below needs reference to Microsoft Office 16.0 Object Library
+
+Public Sub basGetFile()
+
+  '** call basGetFile
+
+  '** Copy the code below into a cmd_Browse_Click button.
+
+    'Dim fd As FileDialog
+    Dim FileName As String
+    
+    'Set fd = Application.FileDialog(msoFileDialogOpen)
+    
+    'If you'd like to add any filters to what type
+    'of file can be selected, use the section below.
+    'For the example, we will add a filter for text
+    'files onlly.
+    'With fd
+        'Existing filters must be cleared before adding new:
+    '    .Filters.Clear
+    '    .Filters.Add "Text Files", "*.txt"
+        'InitialFileName can be used to set initial directory for file dialog:
+    '    .InitialFileName = "C:\Users\Public"
+    'End With
+    
+    'fd.Show 'Show file select dialog
+    
+    'Set variable "filename" equal to path of file selected:
+    'fileName = fd.SelectedItems(1)
+    
+    'You can now use the filename for the file selected in your code:
+    MsgBox FileName
+    
+End Sub
+
+

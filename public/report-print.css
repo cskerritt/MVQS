@@ -1,0 +1,51 @@
+@page {
+  size: Letter portrait;
+  margin: 0.42in 0.48in;
+}
+
+@page mtsp-landscape {
+  size: Letter landscape;
+  margin: 0.36in 0.42in;
+}
+
+@page mtsp-portrait {
+  size: Letter portrait;
+  margin: 0.42in 0.48in;
+}
+
+body {
+  margin: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.mtsp-page {
+  break-before: page;
+  page-break-before: always;
+}
+
+.mtsp-page:first-child {
+  break-before: auto;
+  page-break-before: auto;
+}
+
+.mtsp-page.portrait {
+  page: mtsp-portrait;
+}
+
+.mtsp-page.landscape {
+  page: mtsp-landscape;
+}
+
+.mtsp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mtsp-table thead {
+  display: table-header-group;
+}
+
+.mtsp-table tfoot {
+  display: table-footer-group;
+}

@@ -1,0 +1,85 @@
+name: parity-strict
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/parity_*'
+      - 'src/data/build-legacy-database.js'
+      - 'docs/access_object_mapping.json'
+      - 'package.json'
+      - '.github/workflows/parity-strict.yml'
+
+jobs:
+  parity_inventory_mapping:
+    name: parity inventory + mapping (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install mdb-tools (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mdbtools
+
+      - name: Install mdb-tools (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install mdbtools
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run strict parity gate (inventory + table taps + mapping)
+        run: npm run parity:strict
+
+      - name: Upload parity artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-${{ matrix.os }}
+          path: output/analysis/parity/
+
+  parity_access_windows:
+    name: parity Access execution (windows)
+    runs-on: windows-latest
+    needs: parity_inventory_mapping
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Ubuntu parity artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: parity-ubuntu-latest
+          path: output/analysis/parity
+
+      - name: Run Access execution harness (self-hosted/runtime required)
+        shell: pwsh
+        run: |
+          if ($env:PARITY_RUN_WINDOWS_ACCESS -ne '1') {
+            Write-Host 'Skipping Access execution. Set PARITY_RUN_WINDOWS_ACCESS=1 on a Windows runner with Access Runtime installed.'
+            exit 0
+          }
+
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/parity_access_execute_windows.ps1 `
+            -FrontEndPaths "MVQS_Database 2/MVQS_DC_FrontEnd_with_Adobe.accdb" "MVQS_Database 2/MVQS_DC_FrontEnd.accdb" `
+            -RegistryJson "output/analysis/parity/latest_access_registry.json" `
+            -OutDir "output/analysis/parity"

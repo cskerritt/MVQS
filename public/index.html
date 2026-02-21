@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MVQS Modern</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <main class="app-shell wizard-default">
+      <header class="hero">
+        <div class="hero-brand">
+          <img class="hero-logo" src="/assets/mtsp_img_0.jpg" alt="MVQS logo" />
+          <div class="hero-copy">
+            <p class="eyebrow">MVQS Modernization Baseline</p>
+            <h1>MVQS Job-Person & Transferable Skills Workspace</h1>
+            <p class="subtitle">
+              Modern interface over legacy MVQS 2016/2017 and DC data files (DOT profiles, job banks, trait matching, and transferable-skills analysis).
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <section id="wizardPanel" class="card wizard-panel">
+        <div class="panel-title-row wizard-title-row">
+          <h2>Case-First Workflow Wizard</h2>
+          <p>Welcome Cases -> Intake -> Work History DOTs -> Profiles -> Analysis -> Report</p>
+        </div>
+
+        <div class="wizard-toolbar">
+          <div id="wizardCurrentStep" class="wizard-current-step">Current step: Welcome Cases</div>
+          <div class="control-row buttons">
+            <button id="wizardPrevBtn" class="btn btn-quiet" type="button">Back</button>
+            <button id="wizardNextBtn" class="btn btn-primary" type="button">Next</button>
+            <button id="toggleAdvancedModeBtn" class="btn" type="button">Open Advanced Mode</button>
+          </div>
+        </div>
+
+        <nav id="wizardRail" class="wizard-rail" aria-label="Wizard steps"></nav>
+        <div id="wizardBlockingNotice" class="wizard-blocking-notice" aria-live="polite"></div>
+
+        <section id="welcomeView" class="wizard-view active">
+          <h3>Welcome Cases</h3>
+          <p>Select a case/evaluee or create a new one. This is the default landing page.</p>
+          <div class="wizard-split">
+            <div>
+              <div class="control-row buttons">
+                <button id="wizardCreateCaseBtn" class="btn btn-primary" type="button">New Evaluee / Case</button>
+                <button id="wizardRefreshCasesBtn" class="btn btn-quiet" type="button">Refresh Cases</button>
+              </div>
+              <div id="wizardCaseList" class="dashboard-list"></div>
+            </div>
+            <div>
+              <h4>Data Source Status</h4>
+              <p id="wizardReadinessSummary">Checking readiness...</p>
+              <p id="wizardReadinessMeta" class="dashboard-meta"></p>
+              <div class="control-row buttons">
+                <button id="wizardRecheckBtn" class="btn btn-quiet" type="button">Recheck Data</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="intakeView" class="wizard-view">
+          <h3>Intake</h3>
+          <p>Enter required cover-core demographic and referral fields before analysis/export.</p>
+          <div class="dashboard-inline">
+            <label>
+              First Name
+              <input id="wizardFirstNameInput" type="text" maxlength="120" />
+            </label>
+            <label>
+              Last Name
+              <input id="wizardLastNameInput" type="text" maxlength="120" />
+            </label>
+          </div>
+          <div class="dashboard-inline">
+            <label>
+              Street Address
+              <input id="wizardAddress1Input" type="text" maxlength="200" />
+            </label>
+            <label>
+              City
+              <input id="wizardCityInput" type="text" maxlength="120" />
+            </label>
+          </div>
+          <div class="dashboard-inline">
+            <label>
+              Postal Code
+              <input id="wizardPostalInput" type="text" maxlength="40" />
+            </label>
+            <label>
+              Country
+              <input id="wizardCountryInput" type="text" maxlength="120" value="USA" />
+            </label>
+          </div>
+          <div class="dashboard-inline">
+            <label>
+              Demographic State / Province
+              <select id="wizardDemoStateSelect">
+                <option value="">Select state/province</option>
+              </select>
+            </label>
+            <label>
+              Demographic County / Bank
+              <select id="wizardDemoCountySelect" disabled>
+                <option value="">Select county/bank</option>
+              </select>
+            </label>
+          </div>
+          <div class="dashboard-inline">
+            <label>
+              Case Reference
+              <input id="wizardCaseRefInput" type="text" maxlength="200" />
+            </label>
+            <label>
+              Case Name
+              <input id="wizardCaseNameInput" type="text" maxlength="240" />
+            </label>
+          </div>
+          <label>
+            Reason For Referral
+            <input id="wizardReasonInput" type="text" maxlength="4000" />
+          </label>
+          <div class="control-row buttons">
+            <button id="wizardSaveIntakeBtn" class="btn btn-primary" type="button">Save Intake</button>
+          </div>
+          <p id="wizardIntakeMeta" class="dashboard-meta" aria-live="polite"></p>
+        </section>
+
+        <section id="workHistoryView" class="wizard-view">
+          <h3>Work History DOTs</h3>
+          <p>Add one or more work-history DOT codes for transferable-skills source analysis.</p>
+          <p class="dashboard-meta">You can add DOTs before intake is complete. Intake fields are required later for analysis/report export.</p>
+          <div class="dashboard-inline">
+            <label>
+              Search DOT / Title
+              <input id="wizardWorkHistorySearchInput" type="text" maxlength="200" placeholder="e.g., cashier" />
+            </label>
+            <div class="control-row buttons">
+              <button id="wizardWorkHistorySearchBtn" class="btn btn-primary" type="button">Search DOTs</button>
+            </div>
+          </div>
+          <div id="wizardWorkHistorySearchResults" class="dashboard-list"></div>
+          <h4>Selected Work History DOTs</h4>
+          <div id="wizardWorkHistoryList" class="dashboard-list"></div>
+          <p id="wizardWorkHistoryMeta" class="dashboard-meta" aria-live="polite"></p>
+        </section>
+
+        <section id="profilesView" class="wizard-view">
+          <h3>Profiles And Disability Adjustments (Report 3 Layout)</h3>
+          <p>Legacy MVQS sequence: Client Worker Trait Profiles -> Graph Profiles -> Disability Adjustments -> Transferable Skills -> Complete Report.</p>
+          <div id="wizardAdjustmentWorkflow" class="wizard-adjustment-workflow"></div>
+          <div class="dashboard-inline">
+            <label>
+              Methodology Mode
+              <select id="wizardProfileModeSelect">
+                <option value="strict_derived">Strict Derived (Recommended)</option>
+                <option value="clinical_override">Clinical Override</option>
+              </select>
+            </label>
+            <label>
+              Residual Guardrail
+              <select id="wizardResidualCapSelect">
+                <option value="1">Enforce Profile 4 <= Profile 3 (Recommended)</option>
+                <option value="0">Allow Profile 4 Above Profile 3</option>
+              </select>
+            </label>
+            <label>
+              Trait Rows
+              <select id="wizardTraitGroupFilterSelect">
+                <option value="all">All Traits</option>
+                <option value="ged">GED (R/M/L)</option>
+                <option value="apt">Aptitudes</option>
+                <option value="pd">Physical Demands</option>
+                <option value="ec">Environmental Conditions</option>
+              </select>
+            </label>
+          </div>
+          <div class="control-row buttons">
+            <button id="wizardFocusProfile2Btn" class="btn" type="button">Step 1: Focus Evaluative Profile (P2)</button>
+            <button id="wizardFocusProfile4Btn" class="btn" type="button">Step 2: Focus Residual Profile (P4)</button>
+          </div>
+          <div class="dashboard-inline">
+            <label>
+              Quick Adjust Target
+              <select id="wizardAdjustTargetSelect">
+                <option value="profile2">Profile 2</option>
+                <option value="profile4">Profile 4</option>
+                <option value="profile1">Profile 1</option>
+                <option value="profile3">Profile 3</option>
+              </select>
+            </label>
+            <label>
+              Lower By
+              <select id="wizardAdjustBySelect">
+                <option value="1">1 level</option>
+                <option value="2">2 levels</option>
+              </select>
+            </label>
+            <label>
+              Trait Group
+              <select id="wizardAdjustGroupSelect">
+                <option value="all">All Traits</option>
+                <option value="ged">GED (R/M/L)</option>
+                <option value="apt">Aptitudes</option>
+                <option value="pd">Physical Demands</option>
+                <option value="ec">Environmental Conditions</option>
+              </select>
+            </label>
+          </div>
+          <div class="control-row buttons">
+            <button id="wizardApplyAdjustmentBtn" class="btn btn-quiet" type="button">Apply Lowering</button>
+            <button id="wizardLowerProfile2Btn" class="btn btn-quiet" type="button">Lower P2</button>
+            <button id="wizardLowerProfile4Btn" class="btn btn-quiet" type="button">Lower P4</button>
+            <button id="wizardCopyProfile3To4Btn" class="btn btn-quiet" type="button">Copy P3 to P4</button>
+            <button id="wizardResetToDerivedBtn" class="btn btn-quiet" type="button">Reset To Derived</button>
+          </div>
+          <p id="wizardProfileMethodMeta" class="dashboard-meta" aria-live="polite"></p>
+          <p id="wizardProfileFocusMeta" class="dashboard-meta" aria-live="polite"></p>
+          <div id="wizardProfilesGrid"></div>
+          <div class="control-row buttons">
+            <button id="wizardSaveProfilesBtn" class="btn btn-primary" type="button">Save Profiles</button>
+          </div>
+          <p id="wizardProfilesMeta" class="dashboard-meta" aria-live="polite"></p>
+        </section>
+
+        <section id="analysisView" class="wizard-view">
+          <h3>Transferable Skills Analysis</h3>
+          <p>Runs pre/post comparison using Profile 3 and Profile 4.</p>
+          <div class="control-row buttons">
+            <button id="wizardRunAnalysisBtn" class="btn btn-primary" type="button">Run Analysis</button>
+          </div>
+          <p id="wizardAnalysisMeta" class="dashboard-meta" aria-live="polite"></p>
+          <div id="wizardAnalysisSummary" class="detail"></div>
+          <div id="wizardAnalysisResults" class="dashboard-list"></div>
+        </section>
+
+        <section id="reportView" class="wizard-view">
+          <h3>Report And Export</h3>
+          <p>Preview uses the same canonical HTML source as export PDF.</p>
+          <div class="control-row buttons">
+            <button id="wizardGenerateReportBtn" class="btn btn-primary" type="button">Generate Report</button>
+            <button id="wizardSaveReportBtn" class="btn" type="button">Save Report</button>
+            <button id="wizardExportJsonBtn" class="btn btn-quiet" type="button">JSON</button>
+            <button id="wizardExportMdBtn" class="btn btn-quiet" type="button">Markdown</button>
+            <button id="wizardExportHtmlBtn" class="btn btn-quiet" type="button">HTML</button>
+            <button id="wizardExportPdfBtn" class="btn btn-quiet" type="button">PDF</button>
+            <button id="wizardExportPacketBtn" class="btn btn-quiet" type="button">Case Packet</button>
+            <button id="wizardGenerateAiNarrativeBtn" class="btn btn-quiet" type="button">AI Narrative</button>
+          </div>
+          <p id="wizardReportMeta" class="dashboard-meta" aria-live="polite"></p>
+          <div id="wizardReportPreview" class="detail"></div>
+          <div id="wizardAiNarrative" class="detail"></div>
+        </section>
+      </section>
+
+      <section id="workflowPanel" class="card workflow-panel advanced-only">
+        <div class="panel-title-row">
+          <h2>Workflow Dashboard</h2>
+          <p>Follow these steps to run MVQS case analysis from intake to export.</p>
+        </div>
+
+        <div id="readinessStrip" class="workflow-readiness" aria-live="polite">
+          <div class="workflow-readiness-head">
+            <strong>Data Readiness</strong>
+            <span id="readinessBadge" class="workflow-badge workflow-badge-progress">Checking...</span>
+          </div>
+          <p id="readinessMeta" class="workflow-meta">Validating dataset and app database...</p>
+          <p id="readinessSnapshot" class="workflow-meta"></p>
+          <div id="readinessRemediation" class="workflow-remediation"></div>
+          <div class="control-row buttons workflow-buttons">
+            <button id="recheckReadinessBtn" class="btn btn-quiet" type="button">Recheck Data</button>
+          </div>
+        </div>
+
+        <p id="workflowCurrentStep" class="workflow-current" aria-live="polite">Current step: checking data readiness...</p>
+        <div id="workflowStepsList" class="workflow-steps"></div>
+      </section>
+
+      <section id="controlsPanel" class="controls card advanced-only">
+        <div class="control-row">
+          <label>
+            Search DOT/title/description
+            <input id="searchInput" type="text" maxlength="200" placeholder="e.g., architect, 001061010" />
+          </label>
+          <label>
+            State / Province
+            <select id="stateSelect">
+              <option value="">All</option>
+            </select>
+          </label>
+          <label>
+            County / Bank
+            <select id="countySelect" disabled>
+              <option value="">All in state</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="control-row tsa-row">
+          <label class="tsa-source-label">
+            Transferable Skills Source DOT(s)
+            <input
+              id="tsaSourceInput"
+              type="text"
+              maxlength="260"
+              placeholder="Use selected result or enter DOT codes (comma-separated)"
+            />
+          </label>
+          <p class="tsa-help">
+            TSA uses MVQS-style scoring bands (0-19, 20-39, 40-59, 60-79, 80-97) with DOT/O*NET prefixes, VQ/SVP proximity, and 24-trait similarity.
+          </p>
+        </div>
+
+        <div class="control-row buttons">
+          <button id="searchBtn" class="btn btn-primary">Search Jobs</button>
+          <button id="matchBtn" class="btn">Run Match</button>
+          <button id="tsaBtn" class="btn">Run Transferable Skills</button>
+          <button id="resetProfileBtn" class="btn btn-quiet">Reset Profile</button>
+          <button id="toggleProfileBtn" class="btn btn-quiet">Hide Profile</button>
+        </div>
+      </section>
+
+      <section id="manualGuidePanel" class="card manual-guide advanced-only">
+        <div class="panel-title-row">
+          <h2>Legacy Manual Guide (2015-2017)</h2>
+          <p>Presentation aligned to MVQS, VDARE, and Volcano installation/run manuals and code sheets.</p>
+        </div>
+
+        <div class="manual-grid">
+          <article class="manual-block">
+            <h3>Program Lenses</h3>
+            <ul class="manual-list">
+              <li><strong>MVQS:</strong> Job-person matching based on the 24 most vocationally significant worker traits.</li>
+              <li><strong>VDARE:</strong> Extends MVQS with trait elements and temperaments for expanded transferability context.</li>
+              <li><strong>Volcano:</strong> Adds broader HAJ-R plus selected O*NET trait/element support and occupational-density context.</li>
+            </ul>
+          </article>
+
+          <article class="manual-block">
+            <h3>Guided Workflow Map</h3>
+            <ol class="manual-steps">
+              <li>Set geolocation and search scope (state/county, query, DOT/title filter).</li>
+              <li>Set the client profile with the 24 worker traits.</li>
+              <li>Run <strong>Match</strong> to count/rank job-person matches.</li>
+              <li>Run <strong>Transferable Skills</strong> from a source DOT when TSA scoring is needed.</li>
+              <li>Select a result and review tasks, trait vector, and regional demand counts.</li>
+              <li>Generate and download report outputs (modern replacement for legacy `JobsDOT.rtf` print workflow).</li>
+              <li>For wage-loss scenarios, continue in the Rehabilitation Economist workflow outside this app.</li>
+            </ol>
+          </article>
+
+          <article class="manual-block">
+            <h3>Codes And Scales</h3>
+            <table class="manual-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Reference Scale</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>VQ</td>
+                  <td>Mean 100, SD 15, overall range 68-158, average band 85-115.</td>
+                </tr>
+                <tr>
+                  <td>TS/TSP</td>
+                  <td>0-19 (none), 20-39 (few), 40-59 (low), 60-79 (moderate), 80-97 (high).</td>
+                </tr>
+                <tr>
+                  <td>SVP</td>
+                  <td>1 (&lt;5 days) through 9 (&gt;10 years) preparation requirement.</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+
+        <p id="manualTsaBasisMeta" class="manual-footnote" aria-live="polite">
+          Transferable skills uses MVQS-style TS/TSP bands and current SQLite fields (trait vector, DOT/O*NET prefix, VQ, SVP, and region counts).
+        </p>
+      </section>
+
+      <section id="dashboardPanel" class="card dashboard-panel advanced-only">
+        <div class="panel-title-row">
+          <h2>Case Dashboard</h2>
+          <p>Create/manage users, psychometric testing, and saved report exports.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <article id="clientUsersBlock" class="dashboard-block">
+            <h3>Client Users</h3>
+            <label>
+              Active Client
+              <select id="userSelect">
+                <option value="">Select or create a user</option>
+              </select>
+            </label>
+            <div class="dashboard-inline">
+              <label>
+                First Name
+                <input id="userFirstNameInput" type="text" maxlength="120" placeholder="First name" />
+              </label>
+              <label>
+                Last Name
+                <input id="userLastNameInput" type="text" maxlength="120" placeholder="Last name" />
+              </label>
+            </div>
+            <div class="dashboard-inline">
+              <label>
+                Case Ref
+                <input id="userCaseRefInput" type="text" maxlength="200" placeholder="Case number/reference" />
+              </label>
+              <label>
+                Email
+                <input id="userEmailInput" type="text" maxlength="320" placeholder="email@example.com" />
+              </label>
+            </div>
+            <div class="dashboard-inline">
+              <label>
+                Address Line 1
+                <input id="userAddress1Input" type="text" maxlength="200" placeholder="Street address" />
+              </label>
+              <label>
+                Address Line 2
+                <input id="userAddress2Input" type="text" maxlength="200" placeholder="Suite / Apt / Unit" />
+              </label>
+            </div>
+            <div class="dashboard-inline">
+              <label>
+                City
+                <input id="userCityInput" type="text" maxlength="120" placeholder="City" />
+              </label>
+              <label>
+                Postal Code
+                <input id="userPostalInput" type="text" maxlength="40" placeholder="ZIP / Postal" />
+              </label>
+            </div>
+            <div class="dashboard-inline">
+              <label>
+                Demographic State / Province
+                <select id="userDemoStateSelect">
+                  <option value="">Select state/province</option>
+                </select>
+              </label>
+              <label>
+                Demographic County / Bank
+                <select id="userDemoCountySelect" disabled>
+                  <option value="">Select county/bank</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Notes
+              <input id="userNotesInput" type="text" maxlength="5000" placeholder="Case notes or reminders" />
+            </label>
+            <div class="control-row buttons dashboard-buttons">
+              <button id="createUserBtn" class="btn btn-primary" type="button">Create User</button>
+              <button id="updateUserBtn" class="btn" type="button">Update User</button>
+              <button id="deleteUserBtn" class="btn btn-quiet" type="button">Delete User</button>
+            </div>
+            <p id="userMeta" class="dashboard-meta" aria-live="polite">No user selected.</p>
+          </article>
+
+          <article id="psychometricBlock" class="dashboard-block">
+            <h3>Psychometric Testing</h3>
+            <label>
+              Test Catalog
+              <select id="psychTestSelect">
+                <option value="">Select test</option>
+              </select>
+            </label>
+            <div class="dashboard-inline">
+              <label>
+                Raw Score
+                <input id="psychRawInput" type="text" maxlength="40" placeholder="e.g., 42" />
+              </label>
+              <label>
+                Scaled Score
+                <input id="psychScaledInput" type="text" maxlength="40" placeholder="e.g., 103" />
+              </label>
+            </div>
+            <div class="dashboard-inline">
+              <label>
+                Percentile
+                <input id="psychPercentileInput" type="text" maxlength="40" placeholder="0-100" />
+              </label>
+              <label>
+                Measured (UTC or local date)
+                <input id="psychMeasuredAtInput" type="text" maxlength="40" placeholder="2026-02-13T00:00:00Z" />
+              </label>
+            </div>
+            <label>
+              Interpretation / Notes
+              <input id="psychInterpretationInput" type="text" maxlength="5000" placeholder="Interpretation and reliability/validity notes" />
+            </label>
+            <div class="control-row buttons dashboard-buttons">
+              <button id="addPsychResultBtn" class="btn" type="button">Add Test Result</button>
+              <button id="refreshPsychBtn" class="btn btn-quiet" type="button">Refresh Tests</button>
+            </div>
+            <p id="psychMeta" class="dashboard-meta" aria-live="polite">Select a user to manage psychometric records.</p>
+            <div id="psychResultsList" class="dashboard-list"></div>
+          </article>
+
+          <article id="savedReportsBlock" class="dashboard-block">
+            <h3>Saved Reports</h3>
+            <label>
+              Save Label
+              <input id="reportSaveLabelInput" type="text" maxlength="240" placeholder="e.g., Initial TSA and Match Review" />
+            </label>
+            <div class="control-row buttons dashboard-buttons">
+              <button id="saveReportForUserBtn" class="btn btn-primary" type="button">Save Current Report</button>
+              <button id="exportCaseBundleBtn" class="btn" type="button">Export Full Case Bundle</button>
+              <button id="refreshSavedReportsBtn" class="btn btn-quiet" type="button">Refresh Saved</button>
+            </div>
+            <p id="savedReportsMeta" class="dashboard-meta" aria-live="polite">Select a user and generate a report to save/export.</p>
+            <div id="savedReportsList" class="dashboard-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="profilePanel" class="card advanced-only">
+        <div class="panel-title-row">
+          <h2>Client Worker Trait Profile</h2>
+          <p>Adjust profile values, then use <strong>Run Match</strong>.</p>
+        </div>
+        <div id="traitsGrid" class="traits-grid"></div>
+      </section>
+
+      <section class="workspace advanced-only">
+        <article id="resultsPanel" class="card">
+          <div class="panel-title-row">
+            <h2>Results</h2>
+            <p id="resultsMeta" aria-live="polite">No query run yet.</p>
+          </div>
+          <div id="resultsList" class="results-list" aria-busy="false"></div>
+          <div class="results-footer">
+            <button id="loadMoreBtn" class="btn" type="button" hidden>Load More</button>
+          </div>
+        </article>
+
+        <article id="detailPanel" class="card">
+          <div class="panel-title-row">
+            <h2>Job Detail</h2>
+            <p id="detailMeta" aria-live="polite">Select a result to inspect details.</p>
+          </div>
+          <div id="jobDetail" class="detail"></div>
+        </article>
+      </section>
+
+      <section id="reportPanel" class="card advanced-only">
+        <div class="panel-title-row">
+          <h2>Report Builder</h2>
+          <p id="reportMeta" aria-live="polite">No report generated yet.</p>
+        </div>
+
+        <div class="control-row buttons report-buttons">
+          <button id="generateReportBtn" class="btn btn-primary">Generate Report</button>
+          <button id="downloadJsonBtn" class="btn" disabled>Download JSON</button>
+          <button id="downloadMarkdownBtn" class="btn" disabled>Download Markdown</button>
+        </div>
+
+        <div id="reportBody" class="detail" aria-busy="false">
+          <div class="empty">Run search or match, then generate a report.</div>
+        </div>
+      </section>
+    </main>
+
+    <template id="resultTemplate">
+      <button class="result-item" type="button">
+        <div class="result-main">
+          <h3 class="result-title"></h3>
+          <p class="result-dot"></p>
+        </div>
+        <div class="result-metrics"></div>
+      </button>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

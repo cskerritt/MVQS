@@ -1,0 +1,30 @@
+{
+  "name": "mvqs-modern",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:mdb-tools": "python3 scripts/check_mdb_tools.py",
+    "build:data": "node src/data/build-legacy-database.js",
+    "extract:legacy-snapshot": "python3 scripts/extract_legacy_access_snapshot.py",
+    "audit:access-objects": "python3 scripts/audit_access_object_usage.py",
+    "audit:access-objects:strict": "python3 scripts/audit_access_object_usage.py --fail-on-unaccounted",
+    "parity:inventory": "python3 scripts/parity_access_inventory.py --front-end-paths \"MVQS_DC_FrontEnd_with_Adobe.accdb\" \"MVQS_DC_FrontEnd.accdb\" --dc-data-path \"MVQS_DC_Data.accdb\" --dc-jobbank-path \"MVQS_DC_Data_JobBank.accdb\" --out-dir output/analysis/parity",
+    "parity:table-taps": "python3 scripts/parity_table_taps.py --registry-json output/analysis/parity/latest_access_registry.json --out-dir output/analysis/parity --fail-on-missing-table",
+    "parity:execute-access": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/parity_access_execute_windows.ps1 -FrontEndPaths \"MVQS_DC_FrontEnd_with_Adobe.accdb\" \"MVQS_DC_FrontEnd.accdb\" -RegistryJson output/analysis/parity/latest_access_registry.json -OutDir output/analysis/parity -ModuleEntrypointsJson docs/access_module_entrypoints.json",
+    "parity:map-modern": "python3 scripts/parity_modern_mapping_check.py --mapping-path docs/access_object_mapping.json --registry-json output/analysis/parity/latest_access_registry.json --out-dir output/analysis/parity --fail-on-unmapped",
+    "parity:strict": "python3 scripts/parity_strict.py --out-dir output/analysis/parity",
+    "dev": "node src/server.js",
+    "start": "NODE_ENV=production node src/server.js",
+    "smoke:api": "python3 scripts/smoke_api.py --base-url http://localhost:4173",
+    "test:adjustments": "python3 scripts/test_adjustment_math.py --base-url http://localhost:4173",
+    "validate:legacy-sync": "python3 scripts/validate_legacy_sync.py --base-url http://localhost:4173"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "csv-parse": "^5.6.0",
+    "express": "^4.21.2",
+    "pdfkit": "^0.17.2",
+    "playwright": "^1.51.0"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "generated_at_utc": "2026-02-18T17:53:15Z",
+  "snapshot_id": "20260218T175126Z",
+  "inputs": {
+    "front_end_paths": [
+      "/Users/chrisskerritt/Downloads/MVQS_DC_FrontEnd_with_Adobe.accdb",
+      "/Users/chrisskerritt/Downloads/MVQS/MVQS_Database 2/MVQS_DC_FrontEnd.accdb"
+    ],
+    "dc_data_path": "/Users/chrisskerritt/Downloads/MVQS/MVQS_Database 2/MVQS_DC_Data.accdb",
+    "dc_jobbank_path": "/Users/chrisskerritt/Downloads/MVQS/MVQS_Database 2/MVQS_DC_Data_JobBank.accdb",
+    "mapping_path": "/Users/chrisskerritt/Downloads/MVQS/docs/access_object_mapping.json",
+    "run_access_execution": false,
+    "require_access_execution": false
+  },
+  "artifacts": {
+    "access_registry": "/Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/access_registry_20260218T175126Z.json",
+    "query_order": "/Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/query_order_20260218T175126Z.json",
+    "table_tap_coverage": "/Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/table_tap_coverage_20260218T175126Z.json",
+    "modern_mapping_coverage": "/Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/modern_mapping_coverage_20260218T175126Z.json",
+    "access_execution": "/Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/access_execution_20260218T175126Z.json",
+    "presence": {
+      "registry_exists": true,
+      "query_order_exists": true,
+      "table_taps_exists": true,
+      "mapping_coverage_exists": true,
+      "access_execution_exists": false
+    }
+  },
+  "steps": [
+    {
+      "name": "inventory",
+      "return_code": 0,
+      "command": "/Users/chrisskerritt/.homebrew/opt/python@3.14/bin/python3.14 scripts/parity_access_inventory.py --front-end-paths /Users/chrisskerritt/Downloads/MVQS_DC_FrontEnd_with_Adobe.accdb '/Users/chrisskerritt/Downloads/MVQS/MVQS_Database 2/MVQS_DC_FrontEnd.accdb' --dc-data-path '/Users/chrisskerritt/Downloads/MVQS/MVQS_Database 2/MVQS_DC_Data.accdb' --dc-jobbank-path '/Users/chrisskerritt/Downloads/MVQS/MVQS_Database 2/MVQS_DC_Data_JobBank.accdb' --out-dir /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity --snapshot-id 20260218T175126Z",
+      "stdout_tail": "Wrote registry: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/access_registry_20260218T175126Z.json\nWrote latest alias: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/latest_access_registry.json\n{\n  \"modules_total\": 9,\n  \"reports_total\": 130,\n  \"queries_total\": 912,\n  \"canonical_queries_total\": 837,\n  \"dependency_edge_count\": 72,\n  \"query_sql_mismatch_count\": 37,\n  \"inventory_coverage_pass\": true\n}\n",
+      "stderr_tail": "",
+      "pass": true
+    },
+    {
+      "name": "table_taps",
+      "return_code": 2,
+      "command": "/Users/chrisskerritt/.homebrew/opt/python@3.14/bin/python3.14 scripts/parity_table_taps.py --registry-json /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/access_registry_20260218T175126Z.json --out-dir /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity --snapshot-id 20260218T175126Z --fail-on-missing-table",
+      "stdout_tail": "Wrote query order: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/query_order_20260218T175126Z.json\nWrote table taps: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/table_tap_coverage_20260218T175126Z.json\nWrote latest query alias: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/latest_query_order.json\nWrote latest table-tap alias: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/latest_table_tap_coverage.json\n{\n  \"canonical_queries_total\": 837,\n  \"cycle_node_count\": 0,\n  \"required_base_tables_count\": 102,\n  \"missing_table_refs\": 12\n}\n",
+      "stderr_tail": "",
+      "pass": false
+    },
+    {
+      "name": "mapping",
+      "return_code": 0,
+      "command": "/Users/chrisskerritt/.homebrew/opt/python@3.14/bin/python3.14 scripts/parity_modern_mapping_check.py --mapping-path /Users/chrisskerritt/Downloads/MVQS/docs/access_object_mapping.json --registry-json /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/access_registry_20260218T175126Z.json --out-dir /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity --snapshot-id 20260218T175126Z --fail-on-unmapped",
+      "stdout_tail": "Wrote mapping coverage: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/modern_mapping_coverage_20260218T175126Z.json\nWrote latest alias: /Users/chrisskerritt/Downloads/MVQS/output/analysis/parity/latest_modern_mapping_coverage.json\n{\n  \"modules_total\": 9,\n  \"reports_total\": 130,\n  \"queries_total\": 912,\n  \"unmapped_total\": 0,\n  \"mapped_coverage_pass\": true\n}\n",
+      "stderr_tail": "",
+      "pass": true
+    }
+  ],
+  "gate": {
+    "strict_pass": false
+  }
+}

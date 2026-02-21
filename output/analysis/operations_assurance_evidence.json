@@ -1,0 +1,749 @@
+{
+  "generated_at_utc": "2026-02-16T22:24:40.740476+00:00",
+  "base_url": "http://localhost:4173",
+  "workspace": "/Users/chrisskerritt/Downloads/MVQS",
+  "health": {
+    "ok": true,
+    "dbReady": true,
+    "jobs": 12975,
+    "states": 69,
+    "appDbReady": true,
+    "users": 15,
+    "savedReports": 10,
+    "psychometricResults": 8,
+    "dbPath": "/Users/chrisskerritt/Downloads/MVQS/data/mvqs-modern.db",
+    "appDbPath": "/Users/chrisskerritt/Downloads/MVQS/data/mvqs-app.db"
+  },
+  "readiness": {
+    "overall_status": "pass",
+    "blocking": false,
+    "checked_at_utc": "2026-02-16T22:24:36.000Z",
+    "core": {
+      "dbReady": true,
+      "appDbReady": true,
+      "metadata": {
+        "built_at_utc": "2026-02-07T16:10:43.277Z",
+        "legacy_dir": "/Users/chrisskerritt/MVQS/MVQS_Database 2",
+        "source_mode": "dc",
+        "source_main_path": "/Users/chrisskerritt/MVQS/MVQS_Database 2/MVQS_DC_Data.accdb",
+        "jobs_count": "12975",
+        "tasks_count": "119354",
+        "states_count": "69",
+        "counties_count": "3298",
+        "state_job_counts_count": "158471",
+        "county_job_counts_count": "3388936"
+      },
+      "counts": {
+        "jobs": 12975,
+        "job_tasks": 119354,
+        "states": 69,
+        "counties": 3298,
+        "state_job_counts": 158471,
+        "county_job_counts": 3388936,
+        "psychometric_catalog": 15
+      }
+    },
+    "checks": [
+      {
+        "id": "core.db.ready",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Main SQLite database opened."
+      },
+      {
+        "id": "core.app_db.ready",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "App SQLite database opened."
+      },
+      {
+        "id": "core.metadata.table",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Metadata table is present."
+      },
+      {
+        "id": "core.metadata.required_keys",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "All required metadata keys are present."
+      },
+      {
+        "id": "core.tables.nonempty",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "All required tables contain rows."
+      },
+      {
+        "id": "core.metadata.totals_match",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Metadata totals match live table counts."
+      },
+      {
+        "id": "core.states.installed",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "At least one installed state/province is available."
+      },
+      {
+        "id": "core.psychometric_catalog.nonempty",
+        "status": "pass",
+        "severity": "blocker",
+        "message": "Psychometric catalog is loaded."
+      },
+      {
+        "id": "core.playwright.chromium",
+        "status": "pass",
+        "severity": "warning",
+        "message": "Playwright Chromium is available for canonical PDF exports."
+      }
+    ],
+    "remediation": [
+      "npm run build:data -- --legacy-dir \"/Users/chrisskerritt/MVQS/MVQS_Database 2\" --source dc",
+      "npm run dev",
+      "npm run smoke:api"
+    ]
+  },
+  "smoke": {
+    "cmd": [
+      "python3",
+      "/Users/chrisskerritt/Downloads/MVQS/scripts/smoke_api.py",
+      "--base-url",
+      "http://localhost:4173"
+    ],
+    "exit_code": 0,
+    "pass_count": 39,
+    "passes": [
+      "PASS /api/health",
+      "PASS /api/readiness",
+      "PASS /api/traits",
+      "PASS /api/states",
+      "PASS /api/jobs/search",
+      "PASS /api/counties (demographic source)",
+      "PASS /api/match",
+      "PASS /api/transferable-skills/analyze",
+      "PASS /api/reports/match",
+      "PASS /api/reports/match selectedDot outside ranked rows",
+      "PASS /api/reports/transferable-skills",
+      "PASS /api/jobs/search bad region validation",
+      "PASS /api/match limit validation",
+      "PASS /api/transferable-skills/analyze source-dot validation",
+      "PASS /api/* JSON not-found contract",
+      "PASS /api/health app database readiness",
+      "PASS /api/psychometrics/catalog",
+      "PASS /api/users create",
+      "PASS /api/users list",
+      "PASS /api/cases list/detail",
+      "PASS /api/cases/:id/work-history-dots PUT",
+      "PASS /api/cases/:id/work-history-dots POST",
+      "PASS /api/cases/:id/work-history-dots GET/DELETE",
+      "PASS /api/cases/:id/profiles GET/PUT",
+      "PASS /api/cases/:id/analysis/transferable",
+      "PASS /api/users/:userId/psychometrics create",
+      "PASS /api/users/:userId/psychometrics list",
+      "PASS /api/reports/match/save",
+      "PASS /api/reports/transferable-skills/save",
+      "PASS /api/reports/saved list",
+      "PASS /api/reports/saved/:id detail",
+      "PASS /api/reports/saved/:id/export/markdown",
+      "PASS /api/reports/saved/:id/export/html",
+      "PASS /api/reports/saved/:id/export/pdf",
+      "PASS /api/reports/saved/:id/export/case-packet",
+      "PASS /api/reports/saved/:id/export/validate",
+      "PASS /api/reports/saved/:id delete",
+      "PASS /api/users/:userId/psychometrics/:resultId delete",
+      "PASS /api/users/:id delete"
+    ],
+    "tail": [
+      "PASS /api/health",
+      "PASS /api/readiness",
+      "PASS /api/traits",
+      "PASS /api/states",
+      "PASS /api/jobs/search",
+      "PASS /api/counties (demographic source)",
+      "PASS /api/match",
+      "PASS /api/transferable-skills/analyze",
+      "PASS /api/reports/match",
+      "PASS /api/reports/match selectedDot outside ranked rows",
+      "PASS /api/reports/transferable-skills",
+      "PASS /api/jobs/search bad region validation",
+      "PASS /api/match limit validation",
+      "PASS /api/transferable-skills/analyze source-dot validation",
+      "PASS /api/* JSON not-found contract",
+      "PASS /api/health app database readiness",
+      "PASS /api/psychometrics/catalog",
+      "PASS /api/users create",
+      "PASS /api/users list",
+      "PASS /api/cases list/detail",
+      "PASS /api/cases/:id/work-history-dots PUT",
+      "PASS /api/cases/:id/work-history-dots POST",
+      "PASS /api/cases/:id/work-history-dots GET/DELETE",
+      "PASS /api/cases/:id/profiles GET/PUT",
+      "PASS /api/cases/:id/analysis/transferable",
+      "PASS /api/users/:userId/psychometrics create",
+      "PASS /api/users/:userId/psychometrics list",
+      "PASS /api/reports/match/save",
+      "PASS /api/reports/transferable-skills/save",
+      "PASS /api/reports/saved list",
+      "PASS /api/reports/saved/:id detail",
+      "PASS /api/reports/saved/:id/export/markdown",
+      "PASS /api/reports/saved/:id/export/html",
+      "PASS /api/reports/saved/:id/export/pdf",
+      "PASS /api/reports/saved/:id/export/case-packet",
+      "PASS /api/reports/saved/:id/export/validate",
+      "PASS /api/reports/saved/:id delete",
+      "PASS /api/users/:userId/psychometrics/:resultId delete",
+      "PASS /api/users/:id delete",
+      "Smoke check completed successfully."
+    ]
+  },
+  "checks": [
+    {
+      "check_id": "platform.health_and_readiness",
+      "passed": true,
+      "details": {
+        "health_ok": true,
+        "readiness": "pass",
+        "blocking": false
+      }
+    },
+    {
+      "check_id": "platform.smoke_api",
+      "passed": true,
+      "details": {
+        "exit_code": 0,
+        "pass_count": 39,
+        "tail": [
+          "PASS /api/health",
+          "PASS /api/readiness",
+          "PASS /api/traits",
+          "PASS /api/states",
+          "PASS /api/jobs/search",
+          "PASS /api/counties (demographic source)",
+          "PASS /api/match",
+          "PASS /api/transferable-skills/analyze",
+          "PASS /api/reports/match",
+          "PASS /api/reports/match selectedDot outside ranked rows",
+          "PASS /api/reports/transferable-skills",
+          "PASS /api/jobs/search bad region validation",
+          "PASS /api/match limit validation",
+          "PASS /api/transferable-skills/analyze source-dot validation",
+          "PASS /api/* JSON not-found contract",
+          "PASS /api/health app database readiness",
+          "PASS /api/psychometrics/catalog",
+          "PASS /api/users create",
+          "PASS /api/users list",
+          "PASS /api/cases list/detail",
+          "PASS /api/cases/:id/work-history-dots PUT",
+          "PASS /api/cases/:id/work-history-dots POST",
+          "PASS /api/cases/:id/work-history-dots GET/DELETE",
+          "PASS /api/cases/:id/profiles GET/PUT",
+          "PASS /api/cases/:id/analysis/transferable",
+          "PASS /api/users/:userId/psychometrics create",
+          "PASS /api/users/:userId/psychometrics list",
+          "PASS /api/reports/match/save",
+          "PASS /api/reports/transferable-skills/save",
+          "PASS /api/reports/saved list",
+          "PASS /api/reports/saved/:id detail",
+          "PASS /api/reports/saved/:id/export/markdown",
+          "PASS /api/reports/saved/:id/export/html",
+          "PASS /api/reports/saved/:id/export/pdf",
+          "PASS /api/reports/saved/:id/export/case-packet",
+          "PASS /api/reports/saved/:id/export/validate",
+          "PASS /api/reports/saved/:id delete",
+          "PASS /api/users/:userId/psychometrics/:resultId delete",
+          "PASS /api/users/:id delete",
+          "Smoke check completed successfully."
+        ]
+      }
+    },
+    {
+      "check_id": "setup.source_dot_discovery",
+      "passed": true,
+      "details": {
+        "state_id": 11,
+        "county_id": 336,
+        "source_dots": [
+          "119267010",
+          "090117010"
+        ]
+      }
+    },
+    {
+      "check_id": "case.create",
+      "passed": true,
+      "details": {
+        "case_id": 47
+      }
+    },
+    {
+      "check_id": "case.intake_block_gate",
+      "passed": true,
+      "details": {
+        "missing_fields": [
+          "address_line1",
+          "city",
+          "postal_code",
+          "reason_for_referral"
+        ],
+        "error": "Case intake is incomplete. Complete required core fields before analysis."
+      }
+    },
+    {
+      "check_id": "case.patch_required_fields",
+      "passed": true,
+      "details": {
+        "case": {
+          "user_id": 47,
+          "external_id": null,
+          "first_name": "Assurance",
+          "last_name": "Run",
+          "email": null,
+          "case_reference": null,
+          "address_line1": "123 Validation Way",
+          "address_line2": null,
+          "city": "Test City",
+          "postal_code": "32920",
+          "country_name": "USA",
+          "demographic_state_id": 11,
+          "demographic_county_id": 336,
+          "case_name": "Assurance Case 20260216172438",
+          "reason_for_referral": "Operations assurance validation",
+          "claims_email": null,
+          "case_diagnosis": null,
+          "vipr_type": null,
+          "labor_market_area_label": "Labor Market Area",
+          "evaluation_year": null,
+          "report_header_notes": null,
+          "notes": null,
+          "active": 1,
+          "created_at_utc": "2026-02-16T22:24:38.445Z",
+          "updated_at_utc": "2026-02-16T22:24:38.447Z",
+          "demographic_state_abbrev": "FL",
+          "demographic_state_name": "Florida",
+          "demographic_county_name": "Alachua"
+        }
+      }
+    },
+    {
+      "check_id": "case.work_history_put",
+      "passed": true,
+      "details": {
+        "rows": [
+          {
+            "case_work_history_id": 68,
+            "user_id": 47,
+            "dot_code": "119267010",
+            "display_order": 1,
+            "title_snapshot": "Abstractor",
+            "created_at_utc": "2026-02-16T22:24:38.448Z",
+            "updated_at_utc": "2026-02-16T22:24:38.448Z",
+            "title": "Abstractor",
+            "vq": 108.6534,
+            "svp": 6,
+            "trait_vector": "535224222111001011000000",
+            "onet_ou_code": "28311"
+          },
+          {
+            "case_work_history_id": 69,
+            "user_id": 47,
+            "dot_code": "090117010",
+            "display_order": 2,
+            "title_snapshot": "Academic Dean",
+            "created_at_utc": "2026-02-16T22:24:38.448Z",
+            "updated_at_utc": "2026-02-16T22:24:38.448Z",
+            "title": "Academic Dean",
+            "vq": 114.98,
+            "svp": 9,
+            "trait_vector": "535234222111001111000000",
+            "onet_ou_code": "15005A"
+          }
+        ]
+      }
+    },
+    {
+      "check_id": "profiles.residual_cap_enforced",
+      "passed": true,
+      "details": {
+        "profile3": [
+          5,
+          3,
+          5,
+          2,
+          3,
+          4,
+          3,
+          2,
+          3,
+          2,
+          2,
+          2,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        "profile4": [
+          5,
+          3,
+          5,
+          2,
+          3,
+          4,
+          3,
+          2,
+          3,
+          2,
+          2,
+          2,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "check_id": "case.analysis_transferable",
+      "passed": true,
+      "details": {
+        "total": 385,
+        "result_count": 100,
+        "report4_summary": {
+          "pre": {
+            "total_jobs": 385,
+            "avg_tsp_percent": 21.7
+          },
+          "post": {
+            "total_jobs": 385,
+            "avg_tsp_percent": 21.7
+          },
+          "residual_percent": 100
+        },
+        "aggregate_present": false
+      }
+    },
+    {
+      "check_id": "analysis.pagination_aggregate_consistency",
+      "passed": true,
+      "details": {
+        "total_a": 385,
+        "total_b": 385,
+        "bands_a": {
+          "total": 385,
+          "level_5": 6,
+          "level_4": 9,
+          "level_3": 5,
+          "level_2": 342,
+          "level_1": 23
+        },
+        "bands_b": {
+          "total": 385,
+          "level_5": 6,
+          "level_4": 9,
+          "level_3": 5,
+          "level_2": 342,
+          "level_1": 23
+        },
+        "aggregate_a": {
+          "result_count": 385,
+          "average_tsp_percent": 21.7,
+          "average_va_adjustment_percent": 10
+        },
+        "aggregate_b": {
+          "result_count": 385,
+          "average_tsp_percent": 21.7,
+          "average_va_adjustment_percent": 10
+        }
+      }
+    },
+    {
+      "check_id": "analysis.multi_source_best_source_selection",
+      "passed": true,
+      "details": {
+        "checked_targets": 12,
+        "mismatch_count": 0,
+        "mismatches": []
+      }
+    },
+    {
+      "check_id": "reports.match_save",
+      "passed": true,
+      "details": {
+        "saved_report_id": 53,
+        "markdown_hash": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+        "html_hash": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4"
+      }
+    },
+    {
+      "check_id": "reports.tsa_save",
+      "passed": true,
+      "details": {
+        "saved_report_id": 54
+      }
+    },
+    {
+      "check_id": "exports.hash_parity_validation",
+      "passed": true,
+      "details": {
+        "expected_md_hash": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+        "expected_html_hash": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4",
+        "headers": {
+          "md": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+          "md_html": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4",
+          "html": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4",
+          "pdf_md": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+          "pdf_html": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4"
+        },
+        "validate": {
+          "saved_report_id": 53,
+          "stored_markdown_hash_sha256": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+          "stored_html_hash_sha256": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4",
+          "computed_markdown_hash_sha256": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+          "computed_html_hash_sha256": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4",
+          "markdown_hash_matches": true,
+          "html_hash_matches": true,
+          "pdf_binary_hash_sha256": "c96703719bb324c48da5f4b5fb0c45c0b6117e86a39f3ca5bd3f72968822b9d2",
+          "pdf_export_uses_same_markdown_source": true,
+          "pdf_export_uses_same_html_source": true,
+          "validated_at_utc": "2026-02-16T22:24:40.736Z"
+        }
+      }
+    },
+    {
+      "check_id": "exports.case_packet_integrity",
+      "passed": true,
+      "details": {
+        "entries": [
+          "manifest.json",
+          "report.html",
+          "report.json",
+          "report.md",
+          "report.pdf"
+        ],
+        "manifest_saved_report_id": 53,
+        "manifest_hashes": {
+          "stored_markdown_hash_sha256": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+          "stored_html_hash_sha256": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4",
+          "computed_markdown_hash_sha256": "5055ec76b1796d5e2028b650e01b1ead10ef82cef9ac1f2a2c60dc7b848b1aea",
+          "computed_html_hash_sha256": "5cbd576acb0fe666dc5846547f25b0dc5e1979c12fcee37a9e687bcb5fbab5c4",
+          "report_json_hash_sha256": "c3ef0ed93e08e685f1ce3131d0c82ebb966c72e9624809d998a172050d0a0b9a",
+          "report_pdf_hash_sha256": "2c9700a25b4294d0ce2bcda7714b588d8f3ae1dce7237057fe4aed679d189c2e",
+          "manifest_json_hash_sha256": "1c7e4bbf544065678415b663aaa4a50ce0725c41cdd6b29317bc1d7cda7b9225"
+        },
+        "manifest_consistency": {
+          "markdown_hash_matches_stored": true,
+          "html_hash_matches_stored": true,
+          "pdf_export_uses_same_markdown_source": true,
+          "pdf_export_uses_same_html_source": true
+        }
+      }
+    }
+  ],
+  "summary": {
+    "total_checks": 15,
+    "passed": 15,
+    "failed": 0
+  },
+  "trend_comparison": {
+    "runs": [
+      {
+        "run": "200",
+        "cases": 200,
+        "det_pass": 200,
+        "det_fail": 0,
+        "gate_fail": 0,
+        "unskilled_fail": 0,
+        "mono_total_fail": 0,
+        "mono_overlap_fail": 0,
+        "strength_fail": 0,
+        "agg_fail": 0,
+        "high_mean": 241.41,
+        "high_median": 70.5,
+        "high_p90": 715.6999999999998,
+        "low_mean": 82.29,
+        "low_median": 10.0,
+        "low_p90": 189.49999999999991,
+        "tsp_mean": 21.482,
+        "tsp_median": 19.0,
+        "tsp_p90": 37.1
+      },
+      {
+        "run": "500",
+        "cases": 500,
+        "det_pass": 500,
+        "det_fail": 0,
+        "gate_fail": 0,
+        "unskilled_fail": 0,
+        "mono_total_fail": 0,
+        "mono_overlap_fail": 0,
+        "strength_fail": 0,
+        "agg_fail": 0,
+        "high_mean": 248.22,
+        "high_median": 65.0,
+        "high_p90": 664.400000000001,
+        "low_mean": 82.05,
+        "low_median": 10.0,
+        "low_p90": 177.20000000000005,
+        "tsp_mean": 20.956,
+        "tsp_median": 19.0,
+        "tsp_p90": 36.740000000000016
+      },
+      {
+        "run": "1000",
+        "cases": 1000,
+        "det_pass": 1000,
+        "det_fail": 0,
+        "gate_fail": 0,
+        "unskilled_fail": 0,
+        "mono_total_fail": 0,
+        "mono_overlap_fail": 0,
+        "strength_fail": 0,
+        "agg_fail": 0,
+        "high_mean": 241.71,
+        "high_median": 64.5,
+        "high_p90": 652.5000000000001,
+        "low_mean": 74.79,
+        "low_median": 9.0,
+        "low_p90": 160.10000000000002,
+        "tsp_mean": 20.56,
+        "tsp_median": 19.15,
+        "tsp_p90": 35.830000000000005
+      }
+    ]
+  },
+  "standard_error": {
+    "n_cases": 1000,
+    "error_rate_standard_errors": [
+      {
+        "metric": "deterministic_fail",
+        "n": 1000,
+        "failures": 0,
+        "error_rate": 0.0,
+        "se": 0.0,
+        "upper_95_rule3_if_zero": 0.003,
+        "upper_95_cp_if_zero": 0.0029912495450953314
+      },
+      {
+        "metric": "gate_invariant_fail",
+        "n": 1000,
+        "failures": 0,
+        "error_rate": 0.0,
+        "se": 0.0,
+        "upper_95_rule3_if_zero": 0.003,
+        "upper_95_cp_if_zero": 0.0029912495450953314
+      },
+      {
+        "metric": "unskilled_cap_fail",
+        "n": 1000,
+        "failures": 0,
+        "error_rate": 0.0,
+        "se": 0.0,
+        "upper_95_rule3_if_zero": 0.003,
+        "upper_95_cp_if_zero": 0.0029912495450953314
+      },
+      {
+        "metric": "monotonic_total_fail",
+        "n": 1000,
+        "failures": 0,
+        "error_rate": 0.0,
+        "se": 0.0,
+        "upper_95_rule3_if_zero": 0.003,
+        "upper_95_cp_if_zero": 0.0029912495450953314
+      },
+      {
+        "metric": "monotonic_overlap_fail",
+        "n": 1000,
+        "failures": 0,
+        "error_rate": 0.0,
+        "se": 0.0,
+        "upper_95_rule3_if_zero": 0.003,
+        "upper_95_cp_if_zero": 0.0029912495450953314
+      },
+      {
+        "metric": "strength_cap_fail",
+        "n": 1000,
+        "failures": 0,
+        "error_rate": 0.0,
+        "se": 0.0,
+        "upper_95_rule3_if_zero": 0.003,
+        "upper_95_cp_if_zero": 0.0029912495450953314
+      },
+      {
+        "metric": "aggregate_consistency_fail",
+        "n": 1000,
+        "failures": 0,
+        "error_rate": 0.0,
+        "se": 0.0,
+        "upper_95_rule3_if_zero": 0.003,
+        "upper_95_cp_if_zero": 0.0029912495450953314
+      }
+    ],
+    "mean_standard_errors": {
+      "totals_high": {
+        "n": 1000,
+        "mean": 241.707,
+        "sd": 499.5911032248487,
+        "se": 15.79845784946814
+      },
+      "totals_low": {
+        "n": 1000,
+        "mean": 74.788,
+        "sd": 240.13939698846997,
+        "se": 7.5938745042294435
+      },
+      "average_tsp_high": {
+        "n": 1000,
+        "mean": 20.5596,
+        "sd": 14.430868921094731,
+        "se": 0.4563441440599603
+      }
+    }
+  },
+  "external_parity_standard_error": {
+    "n_ts": 740,
+    "n_va": 740,
+    "ts_mae": 0.9875675675675676,
+    "ts_sd_abs_error": 1.9716411707302541,
+    "ts_se_mae": 0.07247897091215182,
+    "ts_ci95_mae": [
+      0.84550878457975,
+      1.1296263505553852
+    ],
+    "va_mae": 15.784324324324324,
+    "va_sd_abs_error": 8.645995119892792,
+    "va_se_mae": 0.31783310173484425,
+    "va_ci95_mae": [
+      15.161371444924029,
+      16.407277203724618
+    ]
+  },
+  "evidence_files": [
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/tsa_batch_200_report.md",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/tsa_batch_500_report.md",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/tsa_batch_1000_report.md",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/tsa_batch_trend_comparison.md",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/computation_validity_report.md",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/standard_error_summary.md",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/pdf_case_replay_metrics.json",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/tsa_external_parity_standard_error.json",
+    "/Users/chrisskerritt/Downloads/MVQS/output/analysis/tsa_batch_1000_standard_error.json"
+  ]
+}

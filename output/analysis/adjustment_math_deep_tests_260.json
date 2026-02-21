@@ -1,0 +1,75 @@
+{
+  "generated_at_utc": "2026-02-16T23:30:53.536688+00:00",
+  "base_url": "http://localhost:4173",
+  "db_path": "/Users/chrisskerritt/Downloads/MVQS/data/mvqs-modern.db",
+  "seed": 20260216,
+  "config": {
+    "formula_scenarios": 260,
+    "formula_rows_per_scenario": 50,
+    "multisource_scenarios": 180,
+    "multisource_targets_per_scenario": 15,
+    "case_scenarios": 50,
+    "unskilled_scenarios": 200,
+    "same_dot_skilled_scenarios": 150
+  },
+  "summary": {
+    "formula_row_checks": 12077,
+    "formula_mismatches": 0,
+    "signal_score_checks": 12077,
+    "signal_score_mismatches": 0,
+    "determinism_checks": 260,
+    "determinism_failures": 0,
+    "pagination_checks": 260,
+    "pagination_failures": 0,
+    "multisource_target_checks": 70,
+    "multisource_mismatches": 0,
+    "case_profile1_checks": 50,
+    "case_profile1_failures": 0,
+    "case_profile3_checks": 50,
+    "case_profile3_failures": 0,
+    "case_residual_cap_checks": 50,
+    "case_residual_cap_failures": 0,
+    "case_relaxed_cap_checks": 50,
+    "case_relaxed_cap_failures": 0,
+    "case_report4_checks": 50,
+    "case_report4_failures": 0,
+    "unskilled_cap_checks": 200,
+    "unskilled_cap_failures": 0,
+    "same_dot_skilled_checks": 150,
+    "same_dot_skilled_failures": 0
+  },
+  "error_metrics": {
+    "tsp_percent": {
+      "count": 12077,
+      "mean_error": 0.0,
+      "mae": 0.0,
+      "rmse": 0.0,
+      "std_dev": 0.0,
+      "std_error_mean": 0.0,
+      "max_abs_error": 0.0,
+      "exact_match_rate": 1.0
+    },
+    "tsp_percent_unadjusted": {
+      "count": 12077,
+      "mean_error": 0.0,
+      "mae": 0.0,
+      "rmse": 0.0,
+      "std_dev": 0.0,
+      "std_error_mean": 0.0,
+      "max_abs_error": 0.0,
+      "exact_match_rate": 1.0
+    },
+    "va_adjustment_percent": {
+      "count": 12077,
+      "mean_error": 0.0,
+      "mae": 0.0,
+      "rmse": 0.0,
+      "std_dev": 0.0,
+      "std_error_mean": 0.0,
+      "max_abs_error": 0.0,
+      "exact_match_rate": 1.0
+    }
+  },
+  "total_failures": 0,
+  "sample_mismatches": []
+}

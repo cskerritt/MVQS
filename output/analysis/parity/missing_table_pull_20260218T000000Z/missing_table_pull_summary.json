@@ -1,0 +1,110 @@
+{
+  "db_path": "/Users/chrisskerritt/Downloads/MVQS_DC_FrontEnd_with_Adobe.accdb",
+  "missing_requested_count": 12,
+  "exported_count": 0,
+  "failed_count": 12,
+  "results": [
+    {
+      "table_name": "tblCompanies",
+      "found_in_msysobjects": false,
+      "export_status": "FAILED",
+      "error": "Error: Table tblCompanies does not exist in this database."
+    },
+    {
+      "table_name": "tblEvaluee_Household_Chores",
+      "found_in_msysobjects": true,
+      "type": "6",
+      "flags": "2097152",
+      "database": "C:\\DC\\Clients\\McCroskey_LLC\\MVQS_Database\\MVQS_DC_Data.accdb",
+      "foreign_name": "tblEvaluee_Household_Chores",
+      "connect": "",
+      "export_status": "FAILED",
+      "error": "Error: Table tblEvaluee_Household_Chores does not exist in this database."
+    },
+    {
+      "table_name": "tblEvaluee_Household_Chores_Occupations",
+      "found_in_msysobjects": true,
+      "type": "6",
+      "flags": "2097152",
+      "database": "C:\\DC\\Clients\\McCroskey_LLC\\MVQS_Database\\MVQS_DC_Data.accdb",
+      "foreign_name": "tblEvaluee_Household_Chores_Occupations",
+      "connect": "",
+      "export_status": "FAILED",
+      "error": "Error: Table tblEvaluee_Household_Chores_Occupations does not exist in this database."
+    },
+    {
+      "table_name": "tblEvaluee_Jobs",
+      "found_in_msysobjects": true,
+      "type": "6",
+      "flags": "2097152",
+      "database": "C:\\DC\\Clients\\McCroskey_LLC\\MVQS_Database\\MVQS_DC_Data.accdb",
+      "foreign_name": "tblEvaluee_Jobs",
+      "connect": "",
+      "export_status": "FAILED",
+      "error": "Error: Table tblEvaluee_Jobs does not exist in this database."
+    },
+    {
+      "table_name": "tblEvaluee_Rpt_Table_of_Contents",
+      "found_in_msysobjects": true,
+      "type": "6",
+      "flags": "2097152",
+      "database": "C:\\DC\\Clients\\McCroskey_LLC\\MVQS_Database\\MVQS_DC_Data.accdb",
+      "foreign_name": "tblEvaluee_Rpt_Table_of_Contents",
+      "connect": "",
+      "export_status": "FAILED",
+      "error": "Error: Table tblEvaluee_Rpt_Table_of_Contents does not exist in this database."
+    },
+    {
+      "table_name": "tblIMPORT_USBLS_All_data",
+      "found_in_msysobjects": false,
+      "export_status": "FAILED",
+      "error": "Error: Table tblIMPORT_USBLS_All_data does not exist in this database."
+    },
+    {
+      "table_name": "tblIMPORT_USBLS_All_May_2023_data",
+      "found_in_msysobjects": false,
+      "export_status": "FAILED",
+      "error": "Error: Table tblIMPORT_USBLS_All_May_2023_data does not exist in this database."
+    },
+    {
+      "table_name": "tblIMPORT_USBLS_state_data",
+      "found_in_msysobjects": false,
+      "export_status": "FAILED",
+      "error": "Error: Table tblIMPORT_USBLS_state_data does not exist in this database."
+    },
+    {
+      "table_name": "tblSystem_Database_Usage_Data",
+      "found_in_msysobjects": false,
+      "export_status": "FAILED",
+      "error": "Error: Table tblSystem_Database_Usage_Data does not exist in this database."
+    },
+    {
+      "table_name": "tblVALUES",
+      "found_in_msysobjects": false,
+      "export_status": "FAILED",
+      "error": "Error: Table tblVALUES does not exist in this database."
+    },
+    {
+      "table_name": "tblXLU_Household_Chore_Categories",
+      "found_in_msysobjects": true,
+      "type": "6",
+      "flags": "2097152",
+      "database": "C:\\DC\\Clients\\McCroskey_LLC\\MVQS_Database\\MVQS_DC_Data.accdb",
+      "foreign_name": "tblXLU_Household_Chore_Categories",
+      "connect": "",
+      "export_status": "FAILED",
+      "error": "Error: Table tblXLU_Household_Chore_Categories does not exist in this database."
+    },
+    {
+      "table_name": "tblXLU_Household_Chore_Items",
+      "found_in_msysobjects": true,
+      "type": "6",
+      "flags": "2097152",
+      "database": "C:\\DC\\Clients\\McCroskey_LLC\\MVQS_Database\\MVQS_DC_Data.accdb",
+      "foreign_name": "tblXLU_Household_Chore_Items",
+      "connect": "",
+      "export_status": "FAILED",
+      "error": "Error: Table tblXLU_Household_Chore_Items does not exist in this database."
+    }
+  ]
+}

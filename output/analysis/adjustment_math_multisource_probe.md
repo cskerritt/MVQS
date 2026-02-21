@@ -1,0 +1,56 @@
+# MVQS Deep Adjustment Math Tests
+
+- Generated: 2026-02-16T23:25:02.998578+00:00
+- Base URL: `http://localhost:4173`
+- Total failures: **23**
+
+## Summary
+
+- `formula_row_checks`: 175
+- `formula_mismatches`: 7
+- `determinism_checks`: 5
+- `determinism_failures`: 0
+- `pagination_checks`: 5
+- `pagination_failures`: 0
+- `multisource_target_checks`: 117
+- `multisource_mismatches`: 16
+- `case_profile1_checks`: 32
+- `case_profile1_failures`: 0
+- `case_profile3_checks`: 32
+- `case_profile3_failures`: 0
+- `case_residual_cap_checks`: 32
+- `case_residual_cap_failures`: 0
+- `case_relaxed_cap_checks`: 32
+- `case_relaxed_cap_failures`: 0
+- `case_report4_checks`: 32
+- `case_report4_failures`: 0
+- `unskilled_cap_checks`: 120
+- `unskilled_cap_failures`: 0
+- `same_dot_skilled_checks`: 80
+- `same_dot_skilled_failures`: 0
+
+## Sample Mismatches
+
+- `formula`: `{"kind": "formula", "source_dot": "570685030", "target_dot": "649685054", "actual": {"tsp_percent": 6.7, "tsp_percent_unadjusted": 6.7, "va_adjustment_percent": 0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030"}, "expected": {"tsp_percent": 6.6, "tsp_percent_unadjusted": 6.6, "va_adjustment_percent": 0.0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030", "strength_profile_deficit_levels": 0, "source_unskilled_cap_applied": 1, "profile_gate_failed": 0, "signal_scores": {"dot_prefix": 0.0, "onet_prefix": 0.45, "vq_proximity": 1.0, "svp_proximity": 0.875}}}`
+- `formula`: `{"kind": "formula", "source_dot": "570685030", "target_dot": "920685086", "actual": {"tsp_percent": 6.7, "tsp_percent_unadjusted": 6.7, "va_adjustment_percent": 0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030"}, "expected": {"tsp_percent": 6.6, "tsp_percent_unadjusted": 6.6, "va_adjustment_percent": 0.0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030", "strength_profile_deficit_levels": 0, "source_unskilled_cap_applied": 1, "profile_gate_failed": 0, "signal_scores": {"dot_prefix": 0.0, "onet_prefix": 0.45, "vq_proximity": 1.0, "svp_proximity": 0.875}}}`
+- `formula`: `{"kind": "formula", "source_dot": "570685030", "target_dot": "649685110", "actual": {"tsp_percent": 6.7, "tsp_percent_unadjusted": 6.7, "va_adjustment_percent": 0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030"}, "expected": {"tsp_percent": 6.6, "tsp_percent_unadjusted": 6.6, "va_adjustment_percent": 0.0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030", "strength_profile_deficit_levels": 0, "source_unskilled_cap_applied": 1, "profile_gate_failed": 0, "signal_scores": {"dot_prefix": 0.0, "onet_prefix": 0.45, "vq_proximity": 1.0, "svp_proximity": 0.875}}}`
+- `formula`: `{"kind": "formula", "source_dot": "570685030", "target_dot": "680685106", "actual": {"tsp_percent": 6.7, "tsp_percent_unadjusted": 6.7, "va_adjustment_percent": 0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030"}, "expected": {"tsp_percent": 6.6, "tsp_percent_unadjusted": 6.6, "va_adjustment_percent": 0.0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030", "strength_profile_deficit_levels": 0, "source_unskilled_cap_applied": 1, "profile_gate_failed": 0, "signal_scores": {"dot_prefix": 0.0, "onet_prefix": 0.45, "vq_proximity": 1.0, "svp_proximity": 0.875}}}`
+- `formula`: `{"kind": "formula", "source_dot": "570685030", "target_dot": "733685030", "actual": {"tsp_percent": 6.7, "tsp_percent_unadjusted": 6.7, "va_adjustment_percent": 0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030"}, "expected": {"tsp_percent": 6.6, "tsp_percent_unadjusted": 6.6, "va_adjustment_percent": 0.0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030", "strength_profile_deficit_levels": 0, "source_unskilled_cap_applied": 1, "profile_gate_failed": 0, "signal_scores": {"dot_prefix": 0.0, "onet_prefix": 0.45, "vq_proximity": 1.0, "svp_proximity": 0.875}}}`
+- `formula`: `{"kind": "formula", "source_dot": "570685030", "target_dot": "662685042", "actual": {"tsp_percent": 6.7, "tsp_percent_unadjusted": 6.7, "va_adjustment_percent": 0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030"}, "expected": {"tsp_percent": 6.6, "tsp_percent_unadjusted": 6.6, "va_adjustment_percent": 0.0, "tsp_level": 1, "mtsp_tier_rule": "target_vq_below_85", "transfer_direction": "lateral", "best_source_dot_code": "570685030", "strength_profile_deficit_levels": 0, "source_unskilled_cap_applied": 1, "profile_gate_failed": 0, "signal_scores": {"dot_prefix": 0.0, "onet_prefix": 0.45, "vq_proximity": 1.0, "svp_proximity": 0.875}}}`
+- `formula`: `{"kind": "formula", "source_dot": "739381034", "target_dot": "709684062", "actual": {"tsp_percent": 65.1, "tsp_percent_unadjusted": 76.6, "va_adjustment_percent": 11.7, "tsp_level": 4, "mtsp_tier_rule": "dot3_or_onet_full_or_dot2_onet4", "transfer_direction": "downward", "best_source_dot_code": "739381034"}, "expected": {"tsp_percent": 65.1, "tsp_percent_unadjusted": 76.6, "va_adjustment_percent": 11.6, "tsp_level": 4, "mtsp_tier_rule": "dot3_or_onet_full_or_dot2_onet4", "transfer_direction": "downward", "best_source_dot_code": "739381034", "strength_profile_deficit_levels": 0, "source_unskilled_cap_applied": 0, "profile_gate_failed": 0, "signal_scores": {"dot_prefix": 0.33, "onet_prefix": 1.0, "vq_proximity": 0.829, "svp_proximity": 1.0}}}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "574462010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "372667010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "739684014", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "701687010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "723684010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "781687010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "723684014", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "729384010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "712687010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "706687010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "706684022", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "342667014", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "729281010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "312477010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2291}, "sources": ["168287010", "168267062"], "target_dot": "556682010", "actual_best_source": "168267062", "actual_tsp": 20, "expected_best_source": "168287010", "expected_tsp": 20.0, "source_scores": [["168287010", 20.0], ["168267062", 20.0]]}`
+- `multisource`: `{"kind": "multisource", "region": {"state_id": 40, "county_id": 2295}, "sources": ["723584010", "659682026"], "target_dot": "556682010", "actual_best_source": "659682026", "actual_tsp": 20, "expected_best_source": "723584010", "expected_tsp": 20.0, "source_scores": [["723584010", 20.0], ["659682026", 20.0]]}`
