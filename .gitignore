@@ -27,3 +27,4 @@ data/legacy_snapshot/*/tables/*.csv
 output/playwright/
 output/analysis/mtsp_corpus_retest_*.json
 output/analysis/tsa_batch_*.json
+__pycache__/
