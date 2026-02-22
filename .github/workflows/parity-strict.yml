@@ -48,7 +48,7 @@ jobs:
         run: npm ci
 
       - name: Run strict parity gate (inventory + table taps + mapping)
-        run: npm run parity:strict
+        run: npm run parity:strict -- --skip-if-no-databases
 
       - name: Upload parity artifacts
         uses: actions/upload-artifact@v4

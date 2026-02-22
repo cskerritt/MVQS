@@ -80,10 +80,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Fail inventory step when canonical query SQL differs across front-ends.",
     )
+    parser.add_argument(
+        "--skip-if-no-databases",
+        action="store_true",
+        help="Gracefully pass when Access .accdb files are not available (CI mode). "
+             "Falls back to validating committed parity artifacts instead.",
+    )
     return parser.parse_args()
 
 
-def resolve_file_path(path_str: str) -> Path:
+def resolve_file_path(path_str: str, *, required: bool = True) -> Path | None:
     raw = Path(path_str).expanduser()
     if raw.exists():
         return raw.resolve()
@@ -112,6 +118,8 @@ def resolve_file_path(path_str: str) -> Path:
         if candidate.exists():
             return candidate.resolve()
 
+    if not required:
+        return None
     raise RuntimeError(f"Required path not found: {path_str}")
 
 
@@ -126,11 +134,60 @@ def run_step(name: str, command: list[str]) -> StepResult:
     )
 
 
+def validate_committed_artifacts(out_dir: Path) -> int:
+    """CI fallback: validate that committed parity artifacts exist and show strict_pass."""
+    latest_files = [
+        "latest_access_registry.json",
+        "latest_table_tap_coverage.json",
+        "latest_query_order.json",
+        "latest_modern_mapping_coverage.json",
+    ]
+    missing = [f for f in latest_files if not (out_dir / f).exists()]
+    if missing:
+        print(f"FAIL: Missing committed parity artifacts: {', '.join(missing)}")
+        return 2
+
+    # Find the most recent parity_strict report and verify it passed
+    strict_reports = sorted(out_dir.glob("parity_strict_*.json"), reverse=True)
+    if not strict_reports:
+        print("FAIL: No committed parity_strict report found in output directory.")
+        return 2
+
+    latest_report = strict_reports[0]
+    try:
+        report_data = json.loads(latest_report.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"FAIL: Cannot read parity_strict report {latest_report.name}: {exc}")
+        return 2
+
+    strict_pass = report_data.get("gate", {}).get("strict_pass", False)
+    step_count = len(report_data.get("steps", []))
+    snapshot_id = report_data.get("snapshot_id", "unknown")
+    generated = report_data.get("generated_at_utc", "unknown")
+
+    print(f"CI mode: Access databases not available, validating committed artifacts.")
+    print(f"Latest parity report: {latest_report.name} (snapshot {snapshot_id}, generated {generated})")
+    print(f"Committed artifact check: {len(latest_files) - len(missing)}/{len(latest_files)} present")
+    print(json.dumps({"strict_pass": strict_pass, "step_count": step_count, "mode": "artifact_validation"}, indent=2))
+
+    return 0 if strict_pass else 2
+
+
 def main() -> int:
     args = parse_args()
     snapshot_id = args.snapshot_id or timestamp_id()
     out_dir = Path(args.out_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # In CI mode (--skip-if-no-databases), check if databases are available.
+    # If not, fall back to validating committed parity artifacts.
+    if args.skip_if_no_databases:
+        all_db_paths = list(args.front_end_paths) + [args.dc_data_path, args.dc_jobbank_path]
+        resolved = [resolve_file_path(p, required=False) for p in all_db_paths]
+        if any(r is None for r in resolved):
+            missing_names = [p for p, r in zip(all_db_paths, resolved) if r is None]
+            print(f"Access databases not found: {', '.join(missing_names)}")
+            return validate_committed_artifacts(out_dir)
 
     front_end_paths = [str(resolve_file_path(p)) for p in args.front_end_paths]
     dc_data_path = str(resolve_file_path(args.dc_data_path))
