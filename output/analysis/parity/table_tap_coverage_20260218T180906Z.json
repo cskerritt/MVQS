@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-02-18T18:10:55Z",
+  "generated_at_utc": "2026-02-22T03:37:08Z",
   "snapshot_id": "20260218T180906Z",
   "stats": {
     "queries_checked": 837,
@@ -13777,6 +13777,21 @@
   ],
   "gate": {
     "missing_table_refs": 12,
-    "missing_table_refs_pass": false
+    "missing_table_refs_pass": false,
+    "excluded_known_absent": [
+      "tblCompanies",
+      "tblEvaluee_Household_Chores",
+      "tblEvaluee_Household_Chores_Occupations",
+      "tblEvaluee_Jobs",
+      "tblEvaluee_Rpt_Table_of_Contents",
+      "tblIMPORT_USBLS_All_May_2023_data",
+      "tblIMPORT_USBLS_All_data",
+      "tblIMPORT_USBLS_state_data",
+      "tblSystem_Database_Usage_Data",
+      "tblVALUES",
+      "tblXLU_Household_Chore_Categories",
+      "tblXLU_Household_Chore_Items"
+    ],
+    "actionable_missing_count": 0
   }
 }

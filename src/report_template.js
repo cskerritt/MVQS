@@ -127,16 +127,15 @@ function pickNumericField(row, keys) {
 }
 
 function resolveWageFields(row) {
-  return {
-    hourly: pickNumericField(row, ['hourly_wage', 'avg_hourly_wage', 'wage_hourly', 'hourly']),
-    annual: pickNumericField(row, ['annual_wage', 'avg_annual_wage', 'wage_annual', 'annual']),
-    presentValue: pickNumericField(row, [
-      'present_value_earnings',
-      'mean_present_value_earnings',
-      'pv_earnings',
-      'present_value'
-    ])
-  };
+  const hourly = pickNumericField(row, ['hourly_wage', 'avg_hourly_wage', 'wage_hourly', 'hourly', 'wage_h_median']);
+  const annual = pickNumericField(row, ['annual_wage', 'avg_annual_wage', 'wage_annual', 'annual', 'wage_a_median']);
+  const presentValue = pickNumericField(row, [
+    'present_value_earnings',
+    'mean_present_value_earnings',
+    'pv_earnings',
+    'present_value'
+  ]);
+  return { hourly, annual, presentValue: presentValue ?? annual };
 }
 
 function hasAnyWageValue(wages) {
@@ -680,6 +679,27 @@ function computeVqStats(rows) {
   };
 }
 
+function computeWageStats(rows) {
+  const values = (Array.isArray(rows) ? rows : [])
+    .map((row) => {
+      const wages = resolveWageFields(row);
+      return wages.annual;
+    })
+    .filter((value) => Number.isFinite(value));
+  if (!values.length) {
+    return { mean: null, p10: null, p25: null, p50: null, p75: null, p90: null };
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  return {
+    mean,
+    p10: percentile(values, 0.1),
+    p25: percentile(values, 0.25),
+    p50: percentile(values, 0.5),
+    p75: percentile(values, 0.75),
+    p90: percentile(values, 0.9)
+  };
+}
+
 function deriveWorkHistoryProfile(sourceJobs) {
   const profile = Array.from({ length: TRAITS.length }, () => 0);
   let hasValues = false;
@@ -951,6 +971,8 @@ function renderReport4Html(vm, dateLabel, evalueeName, matches) {
   const bandPost = blocks.post?.tsp_band_counts || vm.report?.tsp_band_counts || {};
   const preVqStats = blocks.pre?.vq_stats || computeVqStats(preRows);
   const postVqStats = blocks.post?.vq_stats || computeVqStats(postRows);
+  const preWageStats = blocks.pre?.wage_stats || computeWageStats(preRows);
+  const postWageStats = blocks.post?.wage_stats || computeWageStats(postRows);
   const preDiagnostics = blocks.pre?.diagnostics || {};
   const postDiagnostics = blocks.post?.diagnostics || vm.report?.transferability_diagnostics || {};
 
@@ -969,22 +991,22 @@ function renderReport4Html(vm, dateLabel, evalueeName, matches) {
   residualCategories.total = formatPercent(computeResidualPercent(preTotal, postTotal));
   residualCategories.access = formatPercent(computeResidualPercent(preAccess, postAccess));
 
-  const earningsRow = (label, stats) => `
+  const earningsRow = (label, stats, wageStats) => `
     <tr>
       <th class="left">${escapeHtml(label)}</th>
       <td class="center">${fmtDecimal(stats.max, 2)}</td>
       <td class="center">${fmtDecimal(stats.avg, 2)}</td>
-      <td class="center">n/a</td>
-      <td class="center">n/a</td>
-      <td class="center">n/a</td>
-      <td class="center">n/a</td>
-      <td class="center">n/a</td>
+      <td class="center">${fmtDecimal(wageStats?.mean, 0)}</td>
+      <td class="center">${fmtDecimal(wageStats?.p10, 0)}</td>
+      <td class="center">${fmtDecimal(wageStats?.p25, 0)}</td>
+      <td class="center">${fmtDecimal(wageStats?.p50, 0)}</td>
+      <td class="center">${fmtDecimal(wageStats?.p75, 0)}</td>
       <td class="center">${fmtDecimal(stats.p10, 2)}</td>
       <td class="center">${fmtDecimal(stats.p25, 2)}</td>
       <td class="center">${fmtDecimal(stats.p50, 2)}</td>
       <td class="center">${fmtDecimal(stats.p75, 2)}</td>
       <td class="center">${fmtDecimal(stats.p90, 2)}</td>
-      <td class="center">n/a</td>
+      <td class="center">${fmtDecimal(wageStats?.p90, 0)}</td>
     </tr>
   `;
 
@@ -1022,46 +1044,44 @@ function renderReport4Html(vm, dateLabel, evalueeName, matches) {
       </table>
 
       <div class="mtsp-section-title">Section 5, Part 2: Earning Capacity and Training Potential</div>
-      <p class="mtsp-subhead">Overall Earning Capacity: Mean present value earnings columns are shown as n/a when wage fields are unavailable in current MVQS data.</p>
+      <p class="mtsp-subhead">Overall Earning Capacity: Annual earnings computed from BLS wage data via SOC crosswalk.</p>
       <table class="mtsp-table mtsp-summary-table">
         <thead>
           <tr>
             <th class="left">Profile</th>
             <th>Max VQ</th>
             <th>Avg VQ</th>
-            <th>Mean</th>
-            <th>10th%ile</th>
-            <th>25th%ile</th>
-            <th>50th%ile</th>
-            <th>75th%ile</th>
-            <th>90th%ile</th>
+            <th>Mean $</th>
+            <th>Earn 10%</th>
+            <th>Earn 25%</th>
+            <th>Earn 50%</th>
+            <th>Earn 75%</th>
             <th>VQ 10th</th>
             <th>VQ 25th</th>
             <th>VQ 50th</th>
             <th>VQ 75th</th>
             <th>VQ 90th</th>
-            <th>Training Potential**</th>
+            <th>Earn 90%</th>
           </tr>
         </thead>
         <tbody>
-          ${earningsRow('Pre', preVqStats)}
-          ${earningsRow('Post', postVqStats)}
+          ${earningsRow('Pre', preVqStats, preWageStats)}
+          ${earningsRow('Post', postVqStats, postWageStats)}
           <tr class="mtsp-residual">
             <th class="left">Residual</th>
             <td class="center">${formatPercent(computeResidualPercent(preVqStats.max, postVqStats.max))}</td>
             <td class="center">${formatPercent(computeResidualPercent(preVqStats.avg, postVqStats.avg))}</td>
-            <td class="center">n/a</td>
-            <td class="center">n/a</td>
-            <td class="center">n/a</td>
-            <td class="center">n/a</td>
-            <td class="center">n/a</td>
-            <td class="center">n/a</td>
+            <td class="center">${formatPercent(computeResidualPercent(preWageStats.mean, postWageStats.mean))}</td>
+            <td class="center">${formatPercent(computeResidualPercent(preWageStats.p10, postWageStats.p10))}</td>
+            <td class="center">${formatPercent(computeResidualPercent(preWageStats.p25, postWageStats.p25))}</td>
+            <td class="center">${formatPercent(computeResidualPercent(preWageStats.p50, postWageStats.p50))}</td>
+            <td class="center">${formatPercent(computeResidualPercent(preWageStats.p75, postWageStats.p75))}</td>
             <td class="center">${formatPercent(computeResidualPercent(preVqStats.p10, postVqStats.p10))}</td>
             <td class="center">${formatPercent(computeResidualPercent(preVqStats.p25, postVqStats.p25))}</td>
             <td class="center">${formatPercent(computeResidualPercent(preVqStats.p50, postVqStats.p50))}</td>
             <td class="center">${formatPercent(computeResidualPercent(preVqStats.p75, postVqStats.p75))}</td>
             <td class="center">${formatPercent(computeResidualPercent(preVqStats.p90, postVqStats.p90))}</td>
-            <td class="center">${formatPercent(computeResidualPercent(preAccess, postAccess))}</td>
+            <td class="center">${formatPercent(computeResidualPercent(preWageStats.p90, postWageStats.p90))}</td>
           </tr>
         </tbody>
       </table>
@@ -1264,9 +1284,15 @@ function renderReport6Html(vm, dateLabel, evalueeName, sourceJobs) {
 }
 
 function resolveBlsWageFromDetails(row) {
+  /* Try OES code from occupation_details first, then WageLoss SOC crosswalk */
   const details = row.occupation_details;
-  if (!details || !details.oes_code) return null;
-  return { oes_code: details.oes_code, oes_title: details.oes_title || null };
+  if (details?.oes_code) {
+    return { oes_code: details.oes_code, oes_title: details.oes_title || null };
+  }
+  if (row.wage_soc_code) {
+    return { oes_code: row.wage_soc_code, oes_title: null };
+  }
+  return null;
 }
 
 function renderReport7Html(vm, dateLabel, evalueeName, sourceJobs) {
@@ -1277,8 +1303,8 @@ function renderReport7Html(vm, dateLabel, evalueeName, sourceJobs) {
           const wages = resolveWageFields(row);
           const blsRef = resolveBlsWageFromDetails(row);
           const wageNote = hasAnyWageValue(wages)
-            ? (blsRef ? `OES ${escapeHtml(blsRef.oes_code)}` : '')
-            : (blsRef ? `BLS ref: OES ${escapeHtml(blsRef.oes_code)}` : 'n/a (wage fields unavailable)');
+            ? (blsRef ? `SOC ${escapeHtml(blsRef.oes_code)}` : '')
+            : (blsRef ? `SOC ${escapeHtml(blsRef.oes_code)} (no wage data)` : '');
           return `
             <tr>
               <td class="left dot-col">${escapeHtml(formatDotCode(row.dot_code))}</td>
@@ -1323,7 +1349,7 @@ function renderReport7Html(vm, dateLabel, evalueeName, sourceJobs) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="mtsp-note">Wage outputs default to n/a when wage fields are unavailable in current MVQS data.</p>
+      <p class="mtsp-note">Wage data sourced from BLS Occupational Employment and Wage Statistics via SOC crosswalk.</p>
       ${renderFooter('Page 1 of 1')}
     </section>
   `;
@@ -1471,7 +1497,10 @@ function renderReport10Html(vm, dateLabel, evalueeName, matches) {
           const tsDisplayPercent = deriveTransferTsDisplayPercent(vm, row);
           const vaDisplayPercent = deriveTransferVaDisplayPercent(vm, row);
           const wages = resolveWageFields(row);
-          const wageNote = hasAnyWageValue(wages) ? '' : 'n/a (wage fields unavailable)';
+          const blsRef = resolveBlsWageFromDetails(row);
+          const wageNote = hasAnyWageValue(wages)
+            ? (blsRef ? `SOC ${escapeHtml(blsRef.oes_code)}` : '')
+            : (blsRef ? `SOC ${escapeHtml(blsRef.oes_code)} (no wage data)` : '');
           return `
             <tr>
               <td class="center">${index + 1}</td>
@@ -1485,7 +1514,7 @@ function renderReport10Html(vm, dateLabel, evalueeName, matches) {
               <td class="right">${fmtDecimal(wages.hourly, 2)}</td>
               <td class="right">${fmtDecimal(wages.annual, 2)}</td>
               <td class="right">${fmtDecimal(wages.presentValue, 2)}</td>
-              <td class="left">${escapeHtml(wageNote || 'n/a')}</td>
+              <td class="left">${escapeHtml(wageNote)}</td>
             </tr>
           `;
         })
@@ -1524,7 +1553,7 @@ function renderReport10Html(vm, dateLabel, evalueeName, matches) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="mtsp-note">Wage outputs default to n/a when wage fields are unavailable in current MVQS data.</p>
+      <p class="mtsp-note">Wage data sourced from BLS Occupational Employment and Wage Statistics via SOC crosswalk.</p>
       ${renderFooter('Page auto')}
     </section>
   `;
@@ -2083,7 +2112,10 @@ function renderTransferReportMarkdown(vm) {
   } else {
     sourceJobsByVq.forEach((row) => {
       const wages = resolveWageFields(row);
-      const wageNote = hasAnyWageValue(wages) ? 'n/a' : 'n/a (wage fields unavailable)';
+      const blsRef = resolveBlsWageFromDetails(row);
+      const wageNote = hasAnyWageValue(wages)
+        ? (blsRef ? `SOC ${blsRef.oes_code}` : '')
+        : (blsRef ? `SOC ${blsRef.oes_code} (no wage data)` : '');
       lines.push(
         `| ${asMarkdownCell(row.dot_code)} | ${asMarkdownCell(row.title || 'Untitled')} | ${fmtDecimal(row.vq)} | ${fmtNumber(row.svp)} | ${fmtDecimal(wages.hourly)} | ${fmtDecimal(wages.annual)} | ${fmtDecimal(wages.presentValue)} | ${asMarkdownCell(wageNote)} |`
       );
@@ -2124,9 +2156,12 @@ function renderTransferReportMarkdown(vm) {
     const tsDisplayPercent = deriveTransferTsDisplayPercent(vm, row);
     const vaDisplayPercent = deriveTransferVaDisplayPercent(vm, row);
     const wages = resolveWageFields(row);
-    const wageNote = hasAnyWageValue(wages) ? 'n/a' : 'n/a (wage fields unavailable)';
+    const blsRef = resolveBlsWageFromDetails(row);
+    const wageNote = hasAnyWageValue(wages)
+      ? (blsRef ? `SOC ${blsRef.oes_code}` : '')
+      : (blsRef ? `SOC ${blsRef.oes_code} (no wage data)` : '');
     lines.push(
-      `| ${index + 1} | ${asMarkdownCell(row.dot_code)} | ${asMarkdownCell(row.title)} | ${fmtDecimal(tsDisplayPercent)} | ${fmtDecimal(row.vq)} | ${fmtNumber(row.svp)} | ${fmtDecimal(vaDisplayPercent)} | ${asMarkdownCell(row.vipr_type || 'n/a')} | ${fmtDecimal(wages.hourly)} | ${fmtDecimal(wages.annual)} | ${fmtDecimal(wages.presentValue)} | ${asMarkdownCell(wageNote)} |`
+      `| ${index + 1} | ${asMarkdownCell(row.dot_code)} | ${asMarkdownCell(row.title)} | ${fmtDecimal(tsDisplayPercent)} | ${fmtDecimal(row.vq)} | ${fmtNumber(row.svp)} | ${fmtDecimal(vaDisplayPercent)} | ${asMarkdownCell(row.vipr_type || vm.case_context?.vipr_type || 'n/a')} | ${fmtDecimal(wages.hourly)} | ${fmtDecimal(wages.annual)} | ${fmtDecimal(wages.presentValue)} | ${asMarkdownCell(wageNote)} |`
     );
   });
   lines.push('');

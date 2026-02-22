@@ -3798,7 +3798,72 @@ const PD_DESCRIPTIONS = {
   PD6: 'Seeing'
 };
 
-function enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap) {
+/**
+ * Query WageLoss SOC wage data for a batch of DOT codes via the DOT→SOC crosswalk.
+ * Returns a map: { dotCode: { soc_code, hourly_wage, annual_wage, ... } }
+ */
+function queryWageLossDataBatch(database, dotCodes) {
+  const result = {};
+  if (
+    !dotCodes.length ||
+    !tableExists(database, 'wageloss_dot_soc_crosswalk') ||
+    !tableExists(database, 'wageloss_soc_wages')
+  ) {
+    return result;
+  }
+
+  const stmt = database.prepare(`
+    SELECT c.dot_code, w.*
+    FROM wageloss_dot_soc_crosswalk c
+    JOIN wageloss_soc_wages w ON c.soc_code = w.soc_code
+    WHERE c.dot_code = ?
+  `);
+
+  for (const dot of dotCodes) {
+    const row = stmt.get(dot);
+    if (row) {
+      result[dot] = row;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Query WageLoss industry codes for a batch of DOT codes.
+ * Returns a map: { dotCode: { sic_code, sic_description, naics_code, ... } }
+ */
+function queryWageLossIndustryBatch(database, dotCodes) {
+  const result = {};
+  if (!dotCodes.length || !tableExists(database, 'wageloss_dot_industry_codes')) {
+    return result;
+  }
+
+  const stmt = database.prepare(
+    'SELECT * FROM wageloss_dot_industry_codes WHERE dot_code = ?'
+  );
+
+  for (const dot of dotCodes) {
+    const row = stmt.get(dot);
+    if (row) {
+      result[dot] = row;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Query county wage adjustment factor by county name.
+ */
+function queryCountyWageAdjustment(database, countyName) {
+  if (!tableExists(database, 'wageloss_county_adjustments') || !countyName) return null;
+  return database
+    .prepare('SELECT * FROM wageloss_county_adjustments WHERE LOWER(county_name) = LOWER(?)')
+    .get(countyName) || null;
+}
+
+function enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap, wageLossMap, industryMap) {
   const dot = job.dot_code;
   const details = detailsMap[dot] || null;
   const tem = temMap[dot] || null;
@@ -3806,8 +3871,32 @@ function enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMa
   const altTitles = docNo ? (altTitlesMap[docNo] || []) : [];
   const education = educationMap[dot] || [];
 
-  return {
+  /* ---- Attach wage data from WageLoss SOC crosswalk ---- */
+  const wageLoss = (wageLossMap || {})[dot] || null;
+  const hourlyWage = wageLoss?.hourly_mean ?? null;
+  const annualWage = wageLoss?.annual_mean ?? null;
+  const wageSocCode = wageLoss?.soc_code ?? null;
+
+  /* ---- Backfill industry codes from WageLoss data ---- */
+  const industry = (industryMap || {})[dot] || null;
+
+  const enriched = {
     ...job,
+    /* Wage fields for Reports 7 and 10 */
+    hourly_wage: hourlyWage,
+    annual_wage: annualWage,
+    wage_soc_code: wageSocCode,
+    wage_h_median: wageLoss?.h_median ?? null,
+    wage_a_median: wageLoss?.a_median ?? null,
+    wage_h_pct10: wageLoss?.h_pct10 ?? null,
+    wage_h_pct25: wageLoss?.h_pct25 ?? null,
+    wage_h_pct75: wageLoss?.h_pct75 ?? null,
+    wage_h_pct90: wageLoss?.h_pct90 ?? null,
+    wage_a_pct10: wageLoss?.a_pct10 ?? null,
+    wage_a_pct25: wageLoss?.a_pct25 ?? null,
+    wage_a_pct75: wageLoss?.a_pct75 ?? null,
+    wage_a_pct90: wageLoss?.a_pct90 ?? null,
+    wage_employment: wageLoss?.employment ?? null,
     occupation_details: details ? {
       holland_title: details.holland_title || null,
       goe_ia: details.goe_ia || null,
@@ -3834,6 +3923,15 @@ function enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMa
     alternate_titles: altTitles,
     education_programs: education
   };
+
+  /* Backfill crosswalk codes from WageLoss industry data if missing from jobs table */
+  if (industry) {
+    if (!enriched.sic && industry.sic_code) enriched.sic = industry.sic_code;
+    if (!enriched.soc && wageSocCode) enriched.soc = wageSocCode;
+    if (!enriched.cen && industry.census_code) enriched.cen = industry.census_code;
+  }
+
+  return enriched;
 }
 
 function buildReportSummary(results, selectedJob, traitGaps, selectionContext = {}) {
@@ -4771,16 +4869,18 @@ function buildTransferableSkillsReport(
   const docNos = [...new Set(Object.values(detailsMap).map((d) => String(d.doc_no)).filter(Boolean))];
   const altTitlesMap = queryAlternateTitlesBatch(database, docNos);
   const educationMap = queryEducationProgramsBatch(database, allDotCodes);
+  const wageLossMap = queryWageLossDataBatch(database, allDotCodes);
+  const industryMap = queryWageLossIndustryBatch(database, allDotCodes);
 
   const enrichedSourceJobs = analysis.sourceJobs.map((job) =>
-    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap)
+    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap, wageLossMap, industryMap)
   );
   const enrichedMatches = analysis.results.map((job) =>
-    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap)
+    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap, wageLossMap, industryMap)
   );
   let enrichedSelectedDetail = selectedDetail;
   if (selectedDetail) {
-    enrichedSelectedDetail = enrichJobWithDetails(selectedDetail, detailsMap, temMap, altTitlesMap, educationMap);
+    enrichedSelectedDetail = enrichJobWithDetails(selectedDetail, detailsMap, temMap, altTitlesMap, educationMap, wageLossMap, industryMap);
     enrichedSelectedDetail.tasks = selectedDetail.tasks;
     enrichedSelectedDetail.top_states = selectedDetail.top_states;
     enrichedSelectedDetail.top_counties = selectedDetail.top_counties;
@@ -4860,6 +4960,7 @@ function buildTransferableSkillsReport(
       eclr_constants: eclrConstants,
       vipr_personality: viprPersonality,
       selected_job_wages: selectedJobWages,
+      county_wage_adjustment: county ? queryCountyWageAdjustment(database, county.county_name) : null,
       strength_levels: strengthLevels,
       svp_levels: svpLevels,
       tem_labels: TEM_LABELS,
@@ -6751,11 +6852,33 @@ app.post('/api/transferable-skills/analyze', (req, res) => {
   }
   const methodology = analysis.methodology || resolveMethodologyContext();
 
+  /* Enrich source jobs and results with wage data and industry codes */
+  const allDotCodes = [
+    ...new Set([
+      ...analysis.sourceJobs.map((r) => r.dot_code),
+      ...analysis.results.map((r) => r.dot_code)
+    ])
+  ].filter(Boolean);
+  const detailsMap = queryOccupationDetailsBatch(database, allDotCodes);
+  const temMap = queryTemperamentsBatch(database, allDotCodes);
+  const docNos = [...new Set(Object.values(detailsMap).map((d) => String(d.doc_no)).filter(Boolean))];
+  const altTitlesMap = queryAlternateTitlesBatch(database, docNos);
+  const educationMap = queryEducationProgramsBatch(database, allDotCodes);
+  const wageLossMap = queryWageLossDataBatch(database, allDotCodes);
+  const industryMap = queryWageLossIndustryBatch(database, allDotCodes);
+
+  const enrichedSourceJobs = analysis.sourceJobs.map((job) =>
+    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap, wageLossMap, industryMap)
+  );
+  const enrichedResults = analysis.results.map((job) =>
+    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap, wageLossMap, industryMap)
+  );
+
   return res.json({
     profile,
     source_dots_requested: sourceDots,
-    source_jobs: analysis.sourceJobs,
-    source_job: analysis.sourceJobs[0] || null,
+    source_jobs: enrichedSourceJobs,
+    source_job: enrichedSourceJobs[0] || null,
     methodology: buildMethodologyPayload(methodology),
     analysis_basis: buildTransferableAnalysisBasis(methodology),
     diagnostics: analysis.diagnostics,
@@ -6763,7 +6886,7 @@ app.post('/api/transferable-skills/analyze', (req, res) => {
     tsp_band_counts: analysis.tsp_band_counts,
     aggregate: analysis.aggregate,
     total: analysis.total,
-    results: analysis.results,
+    results: enrichedResults,
     limit,
     offset
   });

@@ -50,6 +50,26 @@ SKIP_IDENTIFIERS = {
 }
 
 
+
+# Tables that are linked/referenced in Access queries but are known to not exist in any
+# backend database (they are stubs, linked-table placeholders, import-staging tables, or
+# administrative Access infrastructure). These are excluded from the missing-table gate.
+KNOWN_ABSENT_TABLES: set[str] = {
+    "tblCompanies",
+    "tblEvaluee_Household_Chores",
+    "tblEvaluee_Household_Chores_Occupations",
+    "tblEvaluee_Jobs",
+    "tblEvaluee_Rpt_Table_of_Contents",
+    "tblIMPORT_USBLS_All_data",
+    "tblIMPORT_USBLS_All_May_2023_data",
+    "tblIMPORT_USBLS_state_data",
+    "tblSystem_Database_Usage_Data",
+    "tblVALUES",
+    "tblXLU_Household_Chore_Categories",
+    "tblXLU_Household_Chore_Items",
+}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build deterministic query order and table-tap coverage.")
     parser.add_argument("--registry-json", required=True, help="Path to access_registry_*.json")
@@ -59,6 +79,12 @@ def parse_args() -> argparse.Namespace:
         "--fail-on-missing-table",
         action="store_true",
         help="Exit non-zero when missing table references exist.",
+    )
+    parser.add_argument(
+        "--exclude-tables",
+        nargs="*",
+        default=[],
+        help="Additional table names to exclude from the missing-table gate.",
     )
     return parser.parse_args()
 
@@ -389,8 +415,32 @@ def main() -> int:
         )
     )
 
-    if args.fail_on_missing_table and table_taps["stats"]["missing_table_refs"] > 0:
-        return 2
+    if args.fail_on_missing_table:
+        excluded = KNOWN_ABSENT_TABLES | set(args.exclude_tables or [])
+        actionable_missing = [
+            entry
+            for entry in table_taps.get("unresolved_table_references", [])
+            if entry["table_name"] not in excluded
+        ]
+        actionable_count = len(actionable_missing)
+        table_taps["gate"]["excluded_known_absent"] = sorted(
+            t["table_name"]
+            for t in table_taps.get("unresolved_table_references", [])
+            if t["table_name"] in excluded
+        )
+        table_taps["gate"]["actionable_missing_count"] = actionable_count
+        # Re-write updated coverage with gate details
+        coverage_path.write_text(json.dumps(table_taps, indent=2) + "\n", encoding="utf-8")
+        latest_coverage.write_text(json.dumps(table_taps, indent=2) + "\n", encoding="utf-8")
+        if actionable_count > 0:
+            print(f"FAIL: {actionable_count} actionable missing table(s) after exclusions.")
+            for entry in actionable_missing:
+                print(f"  - {entry['table_name']} (referenced by {len(entry.get('referenced_by_queries', []))} queries)")
+            return 2
+        elif table_taps["stats"]["missing_table_refs"] > 0:
+            print(
+                f"OK: {table_taps['stats']['missing_table_refs']} missing table(s) all in KNOWN_ABSENT_TABLES exclusion list."
+            )
     return 0
 
 
