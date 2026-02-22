@@ -224,7 +224,9 @@ function normalizeCaseContext(caseContext = {}) {
     demographic_state_label: caseContext.demographic_state_label || caseContext.demographicStateLabel || null,
     demographic_county_label: caseContext.demographic_county_label || caseContext.demographicCountyLabel || null,
     profiles: caseContext.profiles || null,
-    summary_blocks: caseContext.summary_blocks || caseContext.summaryBlocks || null
+    summary_blocks: caseContext.summary_blocks || caseContext.summaryBlocks || null,
+    psychometric_results: Array.isArray(caseContext.psychometric_results) ? caseContext.psychometric_results : [],
+    work_values: Array.isArray(caseContext.work_values) ? caseContext.work_values : []
   };
 }
 
@@ -1667,6 +1669,125 @@ function renderSelectedJobDetailHtml(vm, dateLabel, evalueeName) {
   `;
 }
 
+function renderWorkValuesHtml(vm, dateLabel, evalueeName) {
+  const workValues = vm.case_context?.work_values || [];
+  if (!workValues.length) return '';
+
+  const RATING_LABELS = {
+    5: 'To a great extent',
+    4: 'To a considerable extent',
+    3: 'To a moderate extent',
+    2: 'To a limited extent',
+    1: 'To a very small extent'
+  };
+
+  const byCategory = {};
+  for (const wv of workValues) {
+    const cat = wv.category || 'Other';
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(wv);
+  }
+
+  const categorySections = Object.entries(byCategory).map(([category, values]) => {
+    const rows = values.map((wv) => {
+      const ratingBar = '&#9608;'.repeat(wv.rating) + '&#9617;'.repeat(5 - wv.rating);
+      return `
+        <tr>
+          <td class="left">${escapeHtml(wv.short_label)}</td>
+          <td class="center">${wv.rating}</td>
+          <td class="left" style="font-family:monospace;letter-spacing:2px">${ratingBar}</td>
+          <td class="left" style="font-size:7pt">${escapeHtml(RATING_LABELS[wv.rating] || '')}</td>
+        </tr>
+      `;
+    }).join('');
+    return `
+      <div class="mtsp-section-title">${escapeHtml(category)}</div>
+      <table class="mtsp-table mtsp-summary-table">
+        <thead>
+          <tr>
+            <th class="left">Work Value</th>
+            <th>Rating</th>
+            <th class="left">Level</th>
+            <th class="left">Description</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }).join('');
+
+  return `
+    <section class="mtsp-page portrait">
+      ${renderMtspHeader({
+        reportCode: 'MVQS - Work Values',
+        title: 'Occupational Work Values Assessment',
+        dateLabel,
+        evalueeName,
+        withLogo: false
+      })}
+      <p class="mtsp-note">Occupational Reinforcer Patterns (ORPs) indicate which work values and needs are likely to be reinforced or satisfied by occupations. Based on the Theory of Work Adjustment (TWA).</p>
+      ${categorySections}
+      ${renderFooter('Page auto')}
+    </section>
+  `;
+}
+
+function renderPsychometricResultsHtml(vm, dateLabel, evalueeName) {
+  const results = vm.case_context?.psychometric_results || [];
+  if (!results.length) return '';
+
+  const byDomain = {};
+  for (const r of results) {
+    const domain = r.domain || 'Other';
+    if (!byDomain[domain]) byDomain[domain] = [];
+    byDomain[domain].push(r);
+  }
+
+  const domainSections = Object.entries(byDomain).map(([domain, rows]) => {
+    const rowsHtml = rows.map((r) => `
+      <tr>
+        <td class="left">${escapeHtml(r.test_name || r.test_code || 'n/a')}</td>
+        <td class="center">${r.raw_score !== null ? fmtNumber(r.raw_score) : 'n/a'}</td>
+        <td class="center">${fmtNumber(r.scaled_score)}</td>
+        <td class="center">${fmtNumber(r.percentile)}</td>
+        <td class="center">${fmtNumber(r.stanine)}</td>
+        <td class="left" style="font-size:7pt">${escapeHtml(r.notes || '')}</td>
+      </tr>
+    `).join('');
+    return `
+      <div class="mtsp-section-title">${escapeHtml(domain)}</div>
+      <table class="mtsp-table mtsp-summary-table">
+        <thead>
+          <tr>
+            <th class="left">Test</th>
+            <th>Raw Score</th>
+            <th>Scaled Score</th>
+            <th>Percentile</th>
+            <th>Stanine</th>
+            <th class="left">Notes</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `;
+  }).join('');
+
+  return `
+    <section class="mtsp-page portrait">
+      ${renderMtspHeader({
+        reportCode: 'MVQS - Psychometric Results',
+        title: 'Psychometric Test Results Summary',
+        dateLabel,
+        evalueeName,
+        withLogo: false
+      })}
+      ${domainSections}
+      <p class="mtsp-note">Psychometric test results are used to establish evaluative profile trait levels. Percentiles are referenced to normative populations for each test instrument.</p>
+      ${renderFooter('Page auto')}
+    </section>
+  `;
+}
+
 function renderMatchReportHtml(vm) {
   const report = vm.report;
   const selected = report.selected_job;
@@ -1754,6 +1875,8 @@ function renderTransferReportHtml(vm) {
       ${renderReport10Html(vm, dateLabel, evalueeName, matches)}
       ${renderEducationTrainingHtml(vm, dateLabel, evalueeName, sourceJobs)}
       ${renderSelectedJobDetailHtml(vm, dateLabel, evalueeName)}
+      ${renderWorkValuesHtml(vm, dateLabel, evalueeName)}
+      ${renderPsychometricResultsHtml(vm, dateLabel, evalueeName)}
     </div>
   `;
 }
@@ -2111,6 +2234,33 @@ function renderTransferReportMarkdown(vm) {
       job.education_programs.forEach((ed) => {
         lines.push(`| ${asMarkdownCell(job.dot_code)} | ${asMarkdownCell(job.title || 'Untitled')} | ${asMarkdownCell(ed.caspar_title || 'n/a')} | ${asMarkdownCell(ed.cip90_title || 'n/a')} | ${asMarkdownCell(ed.cip90 || 'n/a')} |`);
       });
+    });
+    lines.push('');
+  }
+
+  /* ---- Psychometric Test Results ---- */
+  const psychResults = vm.case_context?.psychometric_results || [];
+  if (psychResults.length) {
+    lines.push('## Psychometric Test Results');
+    lines.push('');
+    lines.push('| Domain | Test | Raw Score | Scaled Score | Percentile | Stanine | Notes |');
+    lines.push('| --- | --- | ---: | ---: | ---: | ---: | --- |');
+    psychResults.forEach((r) => {
+      lines.push(`| ${asMarkdownCell(r.domain || 'Other')} | ${asMarkdownCell(r.test_name || r.test_code || 'n/a')} | ${fmtNumber(r.raw_score)} | ${fmtNumber(r.scaled_score)} | ${fmtNumber(r.percentile)} | ${fmtNumber(r.stanine)} | ${asMarkdownCell(r.notes || '')} |`);
+    });
+    lines.push('');
+  }
+
+  /* ---- Work Values ---- */
+  const workValues = vm.case_context?.work_values || [];
+  if (workValues.length) {
+    lines.push('## Work Values Assessment');
+    lines.push('');
+    lines.push('| Category | Work Value | Rating | Description |');
+    lines.push('| --- | --- | ---: | --- |');
+    const RATING_LABELS = { 5: 'To a great extent', 4: 'To a considerable extent', 3: 'To a moderate extent', 2: 'To a limited extent', 1: 'To a very small extent' };
+    workValues.forEach((wv) => {
+      lines.push(`| ${asMarkdownCell(wv.category || 'Other')} | ${asMarkdownCell(wv.short_label)} | ${wv.rating} | ${asMarkdownCell(RATING_LABELS[wv.rating] || '')} |`);
     });
     lines.push('');
   }

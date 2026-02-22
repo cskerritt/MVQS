@@ -429,6 +429,13 @@ function ensureAppSchemaMigrations(database) {
     userAddStatements.push('ALTER TABLE users ADD COLUMN report_header_notes TEXT');
   }
 
+  /* Psychometric results migration - add stanine column */
+  const psychColumns = database.prepare('PRAGMA table_info(psychometric_results)').all();
+  const existingPsych = new Set(psychColumns.map((row) => String(row.name)));
+  if (!existingPsych.has('stanine')) {
+    database.exec('ALTER TABLE psychometric_results ADD COLUMN stanine INTEGER');
+  }
+
   const reportColumns = database.prepare('PRAGMA table_info(saved_reports)').all();
   const existingReports = new Set(reportColumns.map((row) => String(row.name)));
   const reportAddStatements = [];
@@ -471,6 +478,17 @@ function ensureAppSchemaMigrations(database) {
         FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
       );
       CREATE INDEX IF NOT EXISTS idx_case_work_history_user ON case_work_history_dots(user_id, display_order, case_work_history_id);
+      CREATE TABLE IF NOT EXISTS case_work_values (
+        user_id INTEGER NOT NULL,
+        value_id INTEGER NOT NULL,
+        short_label TEXT NOT NULL,
+        category TEXT,
+        rating INTEGER NOT NULL DEFAULT 3,
+        updated_at_utc TEXT NOT NULL,
+        PRIMARY KEY(user_id, value_id),
+        FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_case_work_values_user ON case_work_values(user_id);
     `);
     const caseProfileColumns = database.prepare('PRAGMA table_info(case_profile_sets)').all();
     const caseProfileExisting = new Set(caseProfileColumns.map((row) => String(row.name)));
@@ -1469,8 +1487,9 @@ function buildProfilePayload({
 }
 
 function buildCaseCoverContext(caseRow) {
-  return {
-    user_id: caseRow?.user_id || null,
+  const userId = caseRow?.user_id || null;
+  const context = {
+    user_id: userId,
     first_name: caseRow?.first_name || null,
     last_name: caseRow?.last_name || null,
     case_reference: caseRow?.case_reference || null,
@@ -1492,6 +1511,58 @@ function buildCaseCoverContext(caseRow) {
     demographic_state_label: caseRow?.demographic_state_name || null,
     demographic_county_label: caseRow?.demographic_county_name || null
   };
+
+  /* Enrich with psychometric results and profile sets from app DB */
+  if (userId && appDbReady()) {
+    try {
+      const appDatabase = getAppDb();
+      context.psychometric_results = appDatabase.prepare(
+        `SELECT pr.test_code, COALESCE(pc.test_name, pr.test_name) AS test_name, pc.domain,
+                pr.raw_score, pr.scaled_score, pr.percentile, pr.stanine,
+                pr.measured_at_utc AS administration_date, pr.interpretation AS notes
+         FROM psychometric_results pr
+         LEFT JOIN psychometric_catalog pc ON pc.test_code = pr.test_code
+         WHERE pr.user_id = ?
+         ORDER BY pc.domain, pr.test_code`
+      ).all(userId);
+
+      const profileRow = appDatabase.prepare(
+        'SELECT * FROM case_profile_sets WHERE user_id = ?'
+      ).get(userId);
+      if (profileRow) {
+        context.profiles = {
+          profile1: safeJsonParse(profileRow.profile1_work_history_vector, null),
+          profile2: safeJsonParse(profileRow.profile2_evaluative_vector, null),
+          profile3: safeJsonParse(profileRow.profile3_pre_vector, null),
+          profile4: safeJsonParse(profileRow.profile4_post_vector, null),
+          vq_estimates: {
+            profile1_vq_est: profileRow.profile1_vq_est,
+            profile2_vq_est: profileRow.profile2_vq_est,
+            profile3_vq_est: profileRow.profile3_vq_est,
+            profile4_vq_est: profileRow.profile4_vq_est
+          }
+        };
+      }
+      /* Work values assessment */
+      try {
+        context.work_values = appDatabase.prepare(
+          `SELECT value_id, short_label, category, rating FROM case_work_values
+           WHERE user_id = ? ORDER BY value_id`
+        ).all(userId);
+      } catch {
+        /* table may not exist yet */
+      }
+    } catch {
+      /* non-fatal - psychometric/profile enrichment is optional */
+    }
+  }
+
+  return context;
+}
+
+function safeJsonParse(str, fallback) {
+  if (!str) return fallback;
+  try { return JSON.parse(str); } catch { return fallback; }
 }
 
 function computeResidualPercent(preCount, postCount) {
@@ -4618,7 +4689,7 @@ function buildMatchReport(database, { q, stateId, countyId, profile, limit, task
 
 function buildTransferableSkillsReport(
   database,
-  { q, stateId, countyId, profile, sourceDots, limit, taskLimit, selectedDotCode }
+  { q, stateId, countyId, profile, sourceDots, limit, taskLimit, selectedDotCode, viprType }
 ) {
   const region = resolveRegionContext(database, stateId, countyId);
   if (region.error) {
@@ -4720,7 +4791,7 @@ function buildTransferableSkillsReport(
   const eclrConstants = queryEclrConstants(database);
 
   /* ---- VIPR personality type description ---- */
-  const viprTypeCode = selectedDetail?.vipr_type || null;
+  const viprTypeCode = viprType || selectedDetail?.vipr_type || null;
   const viprPersonality = queryPersonalityType(database, viprTypeCode);
 
   /* ---- BLS wage data crosswalk for selected job ---- */
@@ -6734,18 +6805,22 @@ app.post('/api/reports/transferable-skills', (req, res) => {
     return res.status(400).json({ error: parsed.error });
   }
 
+  /* Look up user VIPR type if userId provided */
+  let caseContext = {};
+  const userParsed = parseOptionalInteger(body.userId, 'userId');
+  if (!userParsed.error && userParsed.value !== null && appDbReady()) {
+    caseContext = fetchCaseById(getAppDb(), userParsed.value) || {};
+    if (caseContext.vipr_type) {
+      parsed.viprType = caseContext.vipr_type;
+    }
+  }
+
   const reportResult = buildTransferableSkillsReport(getDb(), parsed);
   if (reportResult.error) {
     if (reportResult.error === 'Source job not found' || reportResult.error.startsWith('Source DOTs not found:')) {
       return res.status(404).json({ error: reportResult.error });
     }
     return res.status(400).json({ error: reportResult.error });
-  }
-
-  let caseContext = {};
-  const userParsed = parseOptionalInteger(body.userId, 'userId');
-  if (!userParsed.error && userParsed.value !== null && appDbReady()) {
-    caseContext = fetchCaseById(getAppDb(), userParsed.value) || {};
   }
 
   return res.json(buildReportResponsePayload(reportResult.report, caseContext));
@@ -6785,10 +6860,11 @@ app.post('/api/reports/match/save', (req, res) => {
     return res.status(400).json({ error: reportResult.error });
   }
   const caseRow = fetchCaseById(appDatabase, userId) || {};
+  const caseContext = buildCaseCoverContext(caseRow);
   const report = reportResult.report;
-  const reportMarkdown = buildReportMarkdown(report, caseRow);
+  const reportMarkdown = buildReportMarkdown(report, caseContext);
   const reportHash = sha256Hex(reportMarkdown);
-  const reportHtml = buildReportHtml(report, caseRow);
+  const reportHtml = buildReportHtml(report, caseContext);
   const reportHtmlHash = sha256Hex(reportHtml);
   const createdAt = nowIso();
 
@@ -6898,6 +6974,12 @@ app.post('/api/reports/transferable-skills/save', (req, res) => {
     return res.status(400).json({ error: parsed.error });
   }
 
+  /* Look up user VIPR type so the report builder can enrich with personality description */
+  const caseRow = fetchCaseById(appDatabase, userId) || {};
+  if (caseRow.vipr_type) {
+    parsed.viprType = caseRow.vipr_type;
+  }
+
   const reportResult = buildTransferableSkillsReport(getDb(), parsed);
   if (reportResult.error) {
     if (reportResult.error === 'Source job not found' || reportResult.error.startsWith('Source DOTs not found:')) {
@@ -6905,11 +6987,11 @@ app.post('/api/reports/transferable-skills/save', (req, res) => {
     }
     return res.status(400).json({ error: reportResult.error });
   }
-  const caseRow = fetchCaseById(appDatabase, userId) || {};
   const report = reportResult.report;
-  const reportMarkdown = buildReportMarkdown(report, caseRow);
+  const caseContext = buildCaseCoverContext(caseRow);
+  const reportMarkdown = buildReportMarkdown(report, caseContext);
   const reportHash = sha256Hex(reportMarkdown);
-  const reportHtml = buildReportHtml(report, caseRow);
+  const reportHtml = buildReportHtml(report, caseContext);
   const reportHtmlHash = sha256Hex(reportHtml);
   const createdAt = nowIso();
 
