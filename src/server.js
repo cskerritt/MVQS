@@ -3553,6 +3553,218 @@ function queryTopCountiesForDot(database, dotCode, stateId, countyId = null, lim
       .all(dotCode, stateId, limit);
 }
 
+/* ------------------------------------------------------------------ */
+/*  Report enrichment helpers – query supplementary occupation data    */
+/* ------------------------------------------------------------------ */
+
+function queryOccupationDetails(database, dotCode) {
+  if (!tableExists(database, 'occupation_details')) return null;
+  return database.prepare('SELECT * FROM occupation_details WHERE dot_code = ?').get(dotCode) || null;
+}
+
+function queryOccupationDetailsBatch(database, dotCodes) {
+  if (!tableExists(database, 'occupation_details') || !dotCodes.length) return {};
+  const placeholders = dotCodes.map(() => '?').join(',');
+  const rows = database.prepare(`SELECT * FROM occupation_details WHERE dot_code IN (${placeholders})`).all(...dotCodes);
+  return Object.fromEntries(rows.map((r) => [r.dot_code, r]));
+}
+
+function queryTemperaments(database, dotCode) {
+  if (!tableExists(database, 'occupation_tem_jolt')) return null;
+  return database.prepare('SELECT * FROM occupation_tem_jolt WHERE dot_code = ?').get(dotCode) || null;
+}
+
+function queryTemperamentsBatch(database, dotCodes) {
+  if (!tableExists(database, 'occupation_tem_jolt') || !dotCodes.length) return {};
+  const placeholders = dotCodes.map(() => '?').join(',');
+  const rows = database.prepare(`SELECT * FROM occupation_tem_jolt WHERE dot_code IN (${placeholders})`).all(...dotCodes);
+  return Object.fromEntries(rows.map((r) => [r.dot_code, r]));
+}
+
+function queryAlternateTitles(database, dotCode) {
+  if (!tableExists(database, 'occupation_alternate_titles')) return [];
+  const details = queryOccupationDetails(database, dotCode);
+  if (!details || !details.doc_no) return [];
+  return database.prepare('SELECT alternate_title FROM occupation_alternate_titles WHERE doc_no = ?').all(String(details.doc_no));
+}
+
+function queryAlternateTitlesBatch(database, docNos) {
+  if (!tableExists(database, 'occupation_alternate_titles') || !docNos.length) return {};
+  const placeholders = docNos.map(() => '?').join(',');
+  const rows = database.prepare(`SELECT doc_no, alternate_title FROM occupation_alternate_titles WHERE doc_no IN (${placeholders})`).all(...docNos);
+  const result = {};
+  for (const row of rows) {
+    if (!result[row.doc_no]) result[row.doc_no] = [];
+    result[row.doc_no].push(row.alternate_title);
+  }
+  return result;
+}
+
+function queryEducationPrograms(database, dotCode) {
+  if (!tableExists(database, 'dot_education')) return [];
+  return database.prepare('SELECT caspar_title, cip90_title, cip90 FROM dot_education WHERE dot_code = ?').all(dotCode);
+}
+
+function queryEducationProgramsBatch(database, dotCodes) {
+  if (!tableExists(database, 'dot_education') || !dotCodes.length) return {};
+  const placeholders = dotCodes.map(() => '?').join(',');
+  const rows = database.prepare(`SELECT dot_code, caspar_title, cip90_title, cip90 FROM dot_education WHERE dot_code IN (${placeholders})`).all(...dotCodes);
+  const result = {};
+  for (const row of rows) {
+    if (!result[row.dot_code]) result[row.dot_code] = [];
+    result[row.dot_code].push({ caspar_title: row.caspar_title, cip90_title: row.cip90_title, cip90: row.cip90 });
+  }
+  return result;
+}
+
+function queryViprJobDescription(database, dotCode) {
+  if (!tableExists(database, 'vipr_job_descriptions')) return null;
+  const row = database.prepare('SELECT job_description FROM vipr_job_descriptions WHERE dot_code = ?').get(dotCode);
+  return row ? row.job_description : null;
+}
+
+function queryPersonalityType(database, typeCode) {
+  if (!tableExists(database, 'personality_types') || !typeCode) return null;
+  return database.prepare('SELECT * FROM personality_types WHERE personality_type = ?').get(typeCode) || null;
+}
+
+function queryEclrConstants(database) {
+  if (!tableExists(database, 'eclr_constants')) return [];
+  return database.prepare('SELECT * FROM eclr_constants').all();
+}
+
+function queryWagesByOccCode(database, occCode, stateAbbrev = null) {
+  if (!tableExists(database, 'usbls_oes') || !occCode) return [];
+  const normalizedOcc = String(occCode).trim();
+  const WAGE_COLS = `area_title, occ_title, tot_emp, h_mean, a_mean, h_median, a_median,
+              h_pct10, h_pct25, h_pct75, h_pct90, a_pct10, a_pct25, a_pct75, a_pct90`;
+  if (stateAbbrev) {
+    const stateRows = database.prepare(
+      `SELECT ${WAGE_COLS} FROM usbls_oes WHERE occ_code = ? AND prim_state = ? AND area_type = 2
+       ORDER BY tot_emp DESC LIMIT 5`
+    ).all(normalizedOcc, stateAbbrev);
+    if (stateRows.length) return stateRows;
+  }
+  const nationalRows = database.prepare(
+    `SELECT ${WAGE_COLS} FROM usbls_oes WHERE occ_code = ? AND area_type = 3
+     ORDER BY tot_emp DESC LIMIT 3`
+  ).all(normalizedOcc);
+  if (nationalRows.length) return nationalRows;
+  return database.prepare(
+    `SELECT ${WAGE_COLS} FROM usbls_oes WHERE occ_code = ? AND area_type = 2
+     ORDER BY tot_emp DESC LIMIT 5`
+  ).all(normalizedOcc);
+}
+
+function queryWagesByTitle(database, titleKeywords, stateAbbrev = null) {
+  if (!tableExists(database, 'usbls_oes') || !titleKeywords) return [];
+  const WAGE_COLS = `area_title, occ_title, tot_emp, h_mean, a_mean, h_median, a_median,
+              h_pct10, h_pct25, h_pct75, h_pct90, a_pct10, a_pct25, a_pct75, a_pct90`;
+  const stopWords = new Set(['and', 'the', 'for', 'with', 'not', 'all', 'other', 'n.e.c.', 'except']);
+  const words = String(titleKeywords).toLowerCase().split(/[\s,]+/)
+    .filter((w) => w.length > 2 && !stopWords.has(w)).slice(0, 3);
+  if (!words.length) return [];
+  /* Try each word individually for broader matching */
+  for (const word of words) {
+    const pattern = `%${word}%`;
+    if (stateAbbrev) {
+      const rows = database.prepare(
+        `SELECT ${WAGE_COLS} FROM usbls_oes WHERE LOWER(occ_title) LIKE ? AND prim_state = ? AND area_type = 2
+         ORDER BY tot_emp DESC LIMIT 3`
+      ).all(pattern, stateAbbrev);
+      if (rows.length) return rows;
+    }
+    const natRows = database.prepare(
+      `SELECT ${WAGE_COLS} FROM usbls_oes WHERE LOWER(occ_title) LIKE ? AND area_type = 3
+       ORDER BY tot_emp DESC LIMIT 3`
+    ).all(pattern);
+    if (natRows.length) return natRows;
+  }
+  return [];
+}
+
+function queryStrengthLevels(database) {
+  if (!tableExists(database, 'strength_levels')) return {};
+  const rows = database.prepare('SELECT * FROM strength_levels').all();
+  return Object.fromEntries(rows.map((r) => [r.strength_level, r]));
+}
+
+function querySvpLevels(database) {
+  if (!tableExists(database, 'svp_levels')) return {};
+  const rows = database.prepare('SELECT * FROM svp_levels').all();
+  return Object.fromEntries(rows.map((r) => [r.svp_level, r]));
+}
+
+const TEM_LABELS = {
+  tem_dir: 'Directing-Control-Planning (DCP)',
+  tem_rep: 'Repetitive/Short Cycle (REP)',
+  tem_inf: 'Influencing People (INFLU)',
+  tem_var: 'Variety and Change (VARCH)',
+  tem_exp: 'Expressing Feelings (DEPL)',
+  tem_alo: 'Working Alone (ISOL)',
+  tem_str: 'Stress (STS)',
+  tem_tol: 'Tolerances (MVC)',
+  tem_und: 'Under Specific Instructions (USI)',
+  tem_peo: 'Dealing with People (PUS)',
+  tem_jud: 'Making Judgments (SJC)'
+};
+
+const PD_LABELS = {
+  PD1: { 1: 'Sedentary', 2: 'Light', 3: 'Medium', 4: 'Heavy', 5: 'Very Heavy' },
+  PD2: { 0: 'Not Present', 1: 'Present' },
+  PD3: { 0: 'Not Present', 1: 'Present' },
+  PD4: { 0: 'Not Present', 1: 'Present' },
+  PD5: { 0: 'Not Present', 1: 'Present' },
+  PD6: { 0: 'Not Present', 1: 'Present' }
+};
+
+const PD_DESCRIPTIONS = {
+  PD1: 'Strength',
+  PD2: 'Climbing and/or Balancing',
+  PD3: 'Stooping, Kneeling, Crouching, and/or Crawling',
+  PD4: 'Reaching, Handling, Fingering, and/or Feeling',
+  PD5: 'Talking and/or Hearing',
+  PD6: 'Seeing'
+};
+
+function enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap) {
+  const dot = job.dot_code;
+  const details = detailsMap[dot] || null;
+  const tem = temMap[dot] || null;
+  const docNo = details ? String(details.doc_no) : null;
+  const altTitles = docNo ? (altTitlesMap[docNo] || []) : [];
+  const education = educationMap[dot] || [];
+
+  return {
+    ...job,
+    occupation_details: details ? {
+      holland_title: details.holland_title || null,
+      goe_ia: details.goe_ia || null,
+      goe_ia_title: details.goe_ia_title || null,
+      d_function: details.d_function || null,
+      p_function: details.p_function || null,
+      t_function: details.t_function || null,
+      data_level: details.data_level || null,
+      people_level: details.people_level || null,
+      things_level: details.things_level || null,
+      oes_code: details.oes_code || null,
+      oes_title: details.oes_title || null,
+      soc_title: details.soc_title || null,
+      category: details.category || null,
+      division: details.division || null,
+      grp_name: details.grp_name || null,
+      svp_length: details.svp_length || null
+    } : null,
+    temperaments: tem ? {
+      dir: tem.tem_dir, rep: tem.tem_rep, inf: tem.tem_inf, var: tem.tem_var,
+      exp: tem.tem_exp, alo: tem.tem_alo, str: tem.tem_str, tol: tem.tem_tol,
+      und: tem.tem_und, peo: tem.tem_peo, jud: tem.tem_jud
+    } : null,
+    alternate_titles: altTitles,
+    education_programs: education
+  };
+}
+
 function buildReportSummary(results, selectedJob, traitGaps, selectionContext = {}) {
   const requestedDotCode = selectionContext.requestedDotCode || null;
   const selectedIncludedInResults = !!selectionContext.selectedIncludedInResults;
@@ -4473,6 +4685,72 @@ function buildTransferableSkillsReport(
   const metadata = readMetadata(database);
   const section7Metadata = getSection7MethodologyMetadata();
   const { state, county } = region;
+
+  /* ---- Enrich source jobs and matches with supplementary data ---- */
+  const allDotCodes = [
+    ...new Set([
+      ...analysis.sourceJobs.map((r) => r.dot_code),
+      ...analysis.results.map((r) => r.dot_code),
+      ...(selectedDetail ? [selectedDetail.dot_code] : [])
+    ])
+  ].filter(Boolean);
+
+  const detailsMap = queryOccupationDetailsBatch(database, allDotCodes);
+  const temMap = queryTemperamentsBatch(database, allDotCodes);
+  const docNos = [...new Set(Object.values(detailsMap).map((d) => String(d.doc_no)).filter(Boolean))];
+  const altTitlesMap = queryAlternateTitlesBatch(database, docNos);
+  const educationMap = queryEducationProgramsBatch(database, allDotCodes);
+
+  const enrichedSourceJobs = analysis.sourceJobs.map((job) =>
+    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap)
+  );
+  const enrichedMatches = analysis.results.map((job) =>
+    enrichJobWithDetails(job, detailsMap, temMap, altTitlesMap, educationMap)
+  );
+  let enrichedSelectedDetail = selectedDetail;
+  if (selectedDetail) {
+    enrichedSelectedDetail = enrichJobWithDetails(selectedDetail, detailsMap, temMap, altTitlesMap, educationMap);
+    enrichedSelectedDetail.tasks = selectedDetail.tasks;
+    enrichedSelectedDetail.top_states = selectedDetail.top_states;
+    enrichedSelectedDetail.top_counties = selectedDetail.top_counties;
+    enrichedSelectedDetail.vipr_job_description = queryViprJobDescription(database, selectedDetail.dot_code);
+  }
+
+  /* ---- ECLR distribution from eclr_constants ---- */
+  const eclrConstants = queryEclrConstants(database);
+
+  /* ---- VIPR personality type description ---- */
+  const viprTypeCode = selectedDetail?.vipr_type || null;
+  const viprPersonality = queryPersonalityType(database, viprTypeCode);
+
+  /* ---- BLS wage data crosswalk for selected job ---- */
+  let selectedJobWages = [];
+  if (enrichedSelectedDetail?.occupation_details?.oes_code) {
+    const oesCode = enrichedSelectedDetail.occupation_details.oes_code;
+    const socFormatted = oesCode.length >= 5
+      ? `${oesCode.slice(0, 2)}-${oesCode.slice(2)}`
+      : oesCode;
+    const stateAbbrev = state?.state_abbrev || null;
+    selectedJobWages = queryWagesByOccCode(database, socFormatted, stateAbbrev);
+    if (!selectedJobWages.length) {
+      selectedJobWages = queryWagesByOccCode(database, socFormatted, null);
+    }
+  }
+  /* Fallback: try title-based search if OES code didn't match */
+  if (!selectedJobWages.length && enrichedSelectedDetail) {
+    const oesTitle = enrichedSelectedDetail.occupation_details?.oes_title
+      || enrichedSelectedDetail.occupation_details?.soc_title
+      || enrichedSelectedDetail.title;
+    if (oesTitle) {
+      const stateAbbrev = state?.state_abbrev || null;
+      selectedJobWages = queryWagesByTitle(database, oesTitle, stateAbbrev);
+    }
+  }
+
+  /* ---- Reference lookups ---- */
+  const strengthLevels = queryStrengthLevels(database);
+  const svpLevels = querySvpLevels(database);
+
   const report = {
     generated_at_utc: nowIso(),
     report_type: 'mvqs_transferable_skills_report',
@@ -4487,7 +4765,7 @@ function buildTransferableSkillsReport(
       region: { state, county },
       requested_match_limit: limit,
       requested_task_limit: taskLimit,
-      requested_source_dots: analysis.sourceJobs.map((row) => row.dot_code)
+      requested_source_dots: enrichedSourceJobs.map((row) => row.dot_code)
     },
     profile: {
       values: profile,
@@ -4501,12 +4779,22 @@ function buildTransferableSkillsReport(
       metadata
     },
     match_pool_total: analysis.total,
-    matches: analysis.results,
-    source_jobs: analysis.sourceJobs,
-    selected_job: selectedDetail,
+    matches: enrichedMatches,
+    source_jobs: enrichedSourceJobs,
+    selected_job: enrichedSelectedDetail,
     tsp_levels: TSP_LEVELS,
     tsp_band_counts: analysis.tsp_band_counts,
-    summary
+    summary,
+    enrichment: {
+      eclr_constants: eclrConstants,
+      vipr_personality: viprPersonality,
+      selected_job_wages: selectedJobWages,
+      strength_levels: strengthLevels,
+      svp_levels: svpLevels,
+      tem_labels: TEM_LABELS,
+      pd_labels: PD_LABELS,
+      pd_descriptions: PD_DESCRIPTIONS
+    }
   };
 
   return { error: null, report };

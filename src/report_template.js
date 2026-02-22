@@ -744,6 +744,89 @@ function renderFooter(pageLabel) {
   `;
 }
 
+function renderViprPersonalityBlock(vm) {
+  const personality = vm.enrichment?.vipr_personality;
+  if (!personality) return '';
+  return `
+    <div class="mtsp-section-title" style="margin-top:10px">VIPR Personality Type: ${escapeHtml(personality.personality_type || '')} — ${escapeHtml(personality.personality_name || '')}</div>
+    <p style="font-size:9pt;margin:2px 0">${escapeHtml(personality.personality_description || 'No description available.')}</p>
+  `;
+}
+
+function renderEclrDistributionBlock(vm) {
+  const constants = vm.enrichment?.eclr_constants;
+  if (!Array.isArray(constants) || !constants.length) return '';
+  const defaultRow = constants.find((r) => r.variant === 'default') || constants[0];
+  if (!defaultRow) return '';
+  return `
+    <div class="mtsp-section-title" style="margin-top:10px">ECLR Distribution (Regression Constants)</div>
+    <table class="mtsp-table mtsp-summary-table" style="width:auto;margin-top:2px">
+      <thead>
+        <tr>
+          <th>Percentile</th>
+          <th>Coefficient 1</th>
+          <th>Coefficient 2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="left">Mean</td><td class="right">${fmtDecimal(defaultRow.eclr_mean1, 5)}</td><td class="right">${fmtDecimal(defaultRow.eclr_mean2, 4)}</td></tr>
+        <tr><td class="left">10th %ile</td><td class="right">${fmtDecimal(defaultRow.eclr_10var1, 5)}</td><td class="right">${fmtDecimal(defaultRow.eclr_10var2, 4)}</td></tr>
+        <tr><td class="left">25th %ile</td><td class="right">${fmtDecimal(defaultRow.eclr_25var1, 5)}</td><td class="right">${fmtDecimal(defaultRow.eclr_25var2, 4)}</td></tr>
+        <tr><td class="left">Median</td><td class="right">${fmtDecimal(defaultRow.eclr_median1, 5)}</td><td class="right">${fmtDecimal(defaultRow.eclr_median2, 4)}</td></tr>
+        <tr><td class="left">75th %ile</td><td class="right">${fmtDecimal(defaultRow.eclr_75var1, 5)}</td><td class="right">${fmtDecimal(defaultRow.eclr_75var2, 4)}</td></tr>
+        <tr><td class="left">90th %ile</td><td class="right">${fmtDecimal(defaultRow.eclr_90var1, 5)}</td><td class="right">${fmtDecimal(defaultRow.eclr_90var2, 4)}</td></tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function renderPhysicalDemandDetails(traitVector) {
+  const values = parseTraitVector(traitVector);
+  if (!values.length) return '';
+  const pdIndices = [
+    { code: 'PD1', index: 11 },
+    { code: 'PD2', index: 12 },
+    { code: 'PD3', index: 13 },
+    { code: 'PD4', index: 14 },
+    { code: 'PD5', index: 15 },
+    { code: 'PD6', index: 16 }
+  ];
+  const PD_DETAIL_LABELS = {
+    PD1: { 1: 'Sedentary', 2: 'Light', 3: 'Medium', 4: 'Heavy', 5: 'Very Heavy' },
+    PD2: { 0: 'Not Required', 1: 'Required' },
+    PD3: { 0: 'Not Required', 1: 'Required' },
+    PD4: { 0: 'Not Required', 1: 'Required' },
+    PD5: { 0: 'Not Required', 1: 'Required' },
+    PD6: { 0: 'Not Required', 1: 'Required' }
+  };
+  const PD_DESC = {
+    PD1: 'Strength',
+    PD2: 'Climbing/Balancing',
+    PD3: 'Stooping/Kneeling/Crouching/Crawling',
+    PD4: 'Reaching/Handling/Fingering/Feeling',
+    PD5: 'Talking/Hearing',
+    PD6: 'Seeing'
+  };
+  return pdIndices.map(({ code, index }) => {
+    const val = Number(values[index]);
+    const label = (PD_DETAIL_LABELS[code] || {})[val] || String(val);
+    return `${PD_DESC[code]}: ${label}`;
+  }).join('; ');
+}
+
+function renderTemperamentSummary(temperaments) {
+  if (!temperaments) return 'n/a';
+  const TEM_SHORT = {
+    dir: 'DCP', rep: 'REP', inf: 'INFLU', var: 'VARCH',
+    exp: 'DEPL', alo: 'ISOL', str: 'STS', tol: 'MVC',
+    und: 'USI', peo: 'PUS', jud: 'SJC'
+  };
+  const active = Object.entries(temperaments)
+    .filter(([, val]) => Number(val) === 1)
+    .map(([key]) => TEM_SHORT[key] || key);
+  return active.length ? active.join(', ') : 'None';
+}
+
 function renderReport1Html(vm, dateLabel, evalueeName) {
   const c = vm.case_context;
   const cityStateZip = [c.city, c.demographic_state_label, c.postal_code].filter(Boolean).join(' ') || 'n/a';
@@ -770,13 +853,15 @@ function renderReport1Html(vm, dateLabel, evalueeName) {
         <div class="mtsp-kv"><span class="k">Evaluation Year:</span><span class="v">${escapeHtml(String(c.evaluation_year || new Date(vm.generated_at_utc || Date.now()).getFullYear()))}</span></div>
         <div class="mtsp-kv"><span class="k">StateParishProvince:</span><span class="v">${escapeHtml(c.demographic_state_label || 'n/a')}</span></div>
         <div class="mtsp-kv"><span class="k">Inflation Rate:</span><span class="v">${escapeHtml(fmtDecimal(sourceMetadata.inflation_rate))}</span></div>
-        <div class="mtsp-kv"><span class="k">VIPR Type:</span><span class="v">${escapeHtml(c.vipr_type || vm.report?.summary?.selected_transfer_direction || 'n/a')}</span></div>
+        <div class="mtsp-kv"><span class="k">VIPR Type:</span><span class="v">${escapeHtml(c.vipr_type || vm.report?.summary?.selected_transfer_direction || 'n/a')}${vm.enrichment?.vipr_personality ? ` — ${escapeHtml(vm.enrichment.vipr_personality.personality_name || '')}` : ''}</span></div>
         <div class="mtsp-kv"><span class="k">ECLR Rate:</span><span class="v">${escapeHtml(fmtDecimal(sourceMetadata.eclr_rate))}</span></div>
         <div class="mtsp-kv"><span class="k">Reason for Referral:</span><span class="v">${escapeHtml(c.reason_for_referral || 'n/a')}</span></div>
         <div class="mtsp-kv"><span class="k">Email for Claims:</span><span class="v">${escapeHtml(c.claims_email || 'n/a')}</span></div>
         <div class="mtsp-kv"><span class="k">Case Name:</span><span class="v">${escapeHtml(c.case_name || c.case_reference || 'n/a')}</span></div>
         <div class="mtsp-kv"><span class="k">Case Diagnosis:</span><span class="v">${escapeHtml(c.case_diagnosis || 'n/a')}</span></div>
       </div>
+      ${renderViprPersonalityBlock(vm)}
+      ${renderEclrDistributionBlock(vm)}
       <p class="mtsp-note"><strong>Case Notes:</strong> ${escapeHtml(c.report_header_notes || 'n/a')}</p>
       ${renderFooter('Page 1 of 1')}
     </section>
@@ -1048,15 +1133,30 @@ function renderReport5Html(vm, dateLabel, evalueeName, sourceJobs) {
           const traits = parseTraitVector(row.trait_vector)
             .map((value) => `<td class="trait-num">${escapeHtml(String(value || ''))}</td>`)
             .join('');
+          const details = row.occupation_details || {};
+          const dptLabel = [details.d_function, details.p_function, details.t_function].filter(Boolean).join(' / ') || '';
+          const hollandLabel = details.holland_title || '';
+          const temLabel = renderTemperamentSummary(row.temperaments);
+          const altTitles = Array.isArray(row.alternate_titles) && row.alternate_titles.length
+            ? row.alternate_titles.slice(0, 5).join(', ')
+            : '';
           return `
             <tr>
               <td class="left dot-col">${escapeHtml(formatDotCode(row.dot_code))}</td>
-              <td class="left wide-title">${escapeHtml(row.title || 'Untitled')}</td>
+              <td class="left wide-title">${escapeHtml(row.title || 'Untitled')}${altTitles ? `<br/><span style="font-size:6.5pt;color:#666">${escapeHtml(altTitles)}</span>` : ''}</td>
               <td class="right vq-col">${fmtDecimal(row.vq, 2)}</td>
               <td class="center vipr-col">${escapeHtml(row.vipr_type || vm.case_context?.vipr_type || 'n/a')}</td>
               <td class="center p-col">${escapeHtml(formatPhysicalDemandP(resolveStrengthLevelFromVector(row.trait_vector)))}</td>
               <td class="left skill-col">${escapeHtml(deriveSkillLevelLabel(row.vq, row.svp))}</td>
               ${traits}
+            </tr>
+            <tr>
+              <td colspan="30" style="font-size:6.8pt;padding:1px 4px;border-top:none;color:#333">
+                <strong>DPT:</strong> ${escapeHtml(dptLabel || 'n/a')}
+                | <strong>Holland:</strong> ${escapeHtml(hollandLabel || 'n/a')}
+                | <strong>TEM:</strong> ${escapeHtml(temLabel)}
+                | <strong>PD:</strong> ${escapeHtml(renderPhysicalDemandDetails(row.trait_vector))}
+              </td>
             </tr>
           `;
         })
@@ -1093,7 +1193,7 @@ function renderReport5Html(vm, dateLabel, evalueeName, sourceJobs) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="mtsp-note">P = PD1 Strength Demand (1/Sed, 2/Lgt, 3/Med, 4/Hvy, 5/VH).</p>
+      <p class="mtsp-note">P = PD1 Strength Demand (1/Sed, 2/Lgt, 3/Med, 4/Hvy, 5/VH). DPT = Data/People/Things functional levels. TEM = Temperament factors. Holland = Holland occupational type.</p>
       ${renderFooter('Page 1 of 1')}
     </section>
   `;
@@ -1161,13 +1261,22 @@ function renderReport6Html(vm, dateLabel, evalueeName, sourceJobs) {
   `;
 }
 
+function resolveBlsWageFromDetails(row) {
+  const details = row.occupation_details;
+  if (!details || !details.oes_code) return null;
+  return { oes_code: details.oes_code, oes_title: details.oes_title || null };
+}
+
 function renderReport7Html(vm, dateLabel, evalueeName, sourceJobs) {
   const sorted = sortByVqDescending(sourceJobs);
   const rows = sorted.length
     ? sorted
         .map((row) => {
           const wages = resolveWageFields(row);
-          const wageNote = hasAnyWageValue(wages) ? '' : 'n/a (wage fields unavailable)';
+          const blsRef = resolveBlsWageFromDetails(row);
+          const wageNote = hasAnyWageValue(wages)
+            ? (blsRef ? `OES ${escapeHtml(blsRef.oes_code)}` : '')
+            : (blsRef ? `BLS ref: OES ${escapeHtml(blsRef.oes_code)}` : 'n/a (wage fields unavailable)');
           return `
             <tr>
               <td class="left dot-col">${escapeHtml(formatDotCode(row.dot_code))}</td>
@@ -1177,7 +1286,7 @@ function renderReport7Html(vm, dateLabel, evalueeName, sourceJobs) {
               <td class="right">${fmtDecimal(wages.hourly, 2)}</td>
               <td class="right">${fmtDecimal(wages.annual, 2)}</td>
               <td class="right">${fmtDecimal(wages.presentValue, 2)}</td>
-              <td class="left">${escapeHtml(wageNote || 'n/a')}</td>
+              <td class="left" style="font-size:7pt">${wageNote || 'n/a'}</td>
             </tr>
           `;
         })
@@ -1227,10 +1336,13 @@ function renderReport8Html(vm, dateLabel, evalueeName, matches) {
           const traits = parseTraitVector(row.trait_vector)
             .map((value) => `<td class="trait-num">${escapeHtml(String(value || ''))}</td>`)
             .join('');
+          const details = row.occupation_details || {};
+          const hollandLabel = details.holland_title || '';
+          const dptLabel = [details.d_function, details.p_function, details.t_function].filter(Boolean).join('/') || '';
           return `
             <tr>
               <td class="left dot-col">${escapeHtml(formatDotCode(row.dot_code))}</td>
-              <td class="left wide-title">${escapeHtml(row.title || 'Untitled')}</td>
+              <td class="left wide-title">${escapeHtml(row.title || 'Untitled')}${hollandLabel ? `<br/><span style="font-size:6pt;color:#555">${escapeHtml(hollandLabel)}${dptLabel ? ` | ${escapeHtml(dptLabel)}` : ''}</span>` : ''}</td>
               <td class="center ts-col">${fmtDecimal(tsDisplayPercent)}%</td>
               <td class="right vq-col">${fmtDecimal(row.vq, 2)}</td>
               <td class="center vipr-col">${escapeHtml(row.vipr_type || vm.case_context?.vipr_type || 'n/a')}</td>
@@ -1279,7 +1391,7 @@ function renderReport8Html(vm, dateLabel, evalueeName, matches) {
         <tbody>${rows}</tbody>
       </table>
       <p class="mtsp-note">
-        P = PD1 Strength Demand (1/Sed, 2/Lgt, 3/Med, 4/Hvy, 5/VH). TSA keeps only jobs that satisfy profile residual demands, including PD1-PD6 physical-demand traits.
+        P = PD1 Strength Demand (1/Sed, 2/Lgt, 3/Med, 4/Hvy, 5/VH). TSA keeps only jobs that satisfy profile residual demands, including PD1-PD6 physical-demand traits. Holland type and DPT functions shown under title where available.
       </p>
       ${renderFooter('Page auto')}
     </section>
@@ -1416,6 +1528,145 @@ function renderReport10Html(vm, dateLabel, evalueeName, matches) {
   `;
 }
 
+function renderEducationTrainingHtml(vm, dateLabel, evalueeName, sourceJobs) {
+  const jobsWithEd = sourceJobs.filter((r) => Array.isArray(r.education_programs) && r.education_programs.length > 0);
+  if (!jobsWithEd.length) return '';
+
+  const rows = jobsWithEd.flatMap((job) =>
+    job.education_programs.map((ed) => `
+      <tr>
+        <td class="left">${escapeHtml(formatDotCode(job.dot_code))}</td>
+        <td class="left">${escapeHtml(job.title || 'Untitled')}</td>
+        <td class="left">${escapeHtml(ed.caspar_title || 'n/a')}</td>
+        <td class="left">${escapeHtml(ed.cip90_title || 'n/a')}</td>
+        <td class="center">${escapeHtml(ed.cip90 || 'n/a')}</td>
+      </tr>
+    `)
+  ).join('');
+
+  return `
+    <section class="mtsp-page portrait">
+      ${renderMtspHeader({
+        reportCode: 'MVQS - Education & Training',
+        title: 'Education and Training Programs (CASPAR/CIP)',
+        dateLabel,
+        evalueeName,
+        withLogo: false
+      })}
+      <table class="mtsp-table mtsp-summary-table">
+        <thead>
+          <tr>
+            <th>DOT Code</th>
+            <th class="left">Job Title</th>
+            <th class="left">CASPAR Program</th>
+            <th class="left">CIP-90 Title</th>
+            <th>CIP Code</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="mtsp-note">CASPAR = Classification of Approved Specific Programs and Residencies. CIP = Classification of Instructional Programs (1990 revision).</p>
+      ${renderFooter('Page auto')}
+    </section>
+  `;
+}
+
+function renderSelectedJobDetailHtml(vm, dateLabel, evalueeName) {
+  const selected = vm.report?.selected_job;
+  if (!selected) return '';
+  const details = selected.occupation_details || {};
+  const tem = selected.temperaments;
+  const altTitles = Array.isArray(selected.alternate_titles) ? selected.alternate_titles : [];
+  const education = Array.isArray(selected.education_programs) ? selected.education_programs : [];
+  const viprDesc = selected.vipr_job_description || '';
+  const wages = vm.enrichment?.selected_job_wages || [];
+
+  const temRows = tem ? Object.entries(tem).map(([key, val]) => {
+    const TEM_FULL = {
+      dir: 'Directing-Control-Planning (DCP)',
+      rep: 'Repetitive/Short Cycle (REP)',
+      inf: 'Influencing People (INFLU)',
+      var: 'Variety and Change (VARCH)',
+      exp: 'Expressing Feelings (DEPL)',
+      alo: 'Working Alone (ISOL)',
+      str: 'Stress (STS)',
+      tol: 'Tolerances (MVC)',
+      und: 'Under Specific Instructions (USI)',
+      peo: 'Dealing with People (PUS)',
+      jud: 'Making Judgments (SJC)'
+    };
+    return `<tr><td class="left">${escapeHtml(TEM_FULL[key] || key)}</td><td class="center">${Number(val) === 1 ? 'Yes' : 'No'}</td></tr>`;
+  }).join('') : '<tr><td colspan="2" class="center">No temperament data available.</td></tr>';
+
+  const wageRows = wages.length
+    ? wages.map((w) => `
+      <tr>
+        <td class="left">${escapeHtml(w.area_title || 'n/a')}</td>
+        <td class="right">${fmtNumber(w.tot_emp)}</td>
+        <td class="right">$${fmtDecimal(w.h_mean, 2)}</td>
+        <td class="right">$${fmtNumber(w.a_mean)}</td>
+        <td class="right">$${fmtNumber(w.a_median)}</td>
+        <td class="right">$${fmtNumber(w.a_pct10)}</td>
+        <td class="right">$${fmtNumber(w.a_pct90)}</td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="7" class="center">No BLS wage data available for this occupation crosswalk.</td></tr>';
+
+  return `
+    <section class="mtsp-page portrait">
+      ${renderMtspHeader({
+        reportCode: 'MVQS - Selected Job Detail',
+        title: 'Selected Target Job Comprehensive Detail',
+        dateLabel,
+        evalueeName,
+        withLogo: false
+      })}
+      <div class="mtsp-kv-grid">
+        <div class="mtsp-kv"><span class="k">Title:</span><span class="v">${escapeHtml(selected.title || 'n/a')}</span></div>
+        <div class="mtsp-kv"><span class="k">DOT Code:</span><span class="v">${escapeHtml(formatDotCode(selected.dot_code))}</span></div>
+        <div class="mtsp-kv"><span class="k">VQ:</span><span class="v">${fmtDecimal(selected.vq, 2)}</span></div>
+        <div class="mtsp-kv"><span class="k">SVP:</span><span class="v">${fmtNumber(selected.svp)}${details.svp_length ? ` (${escapeHtml(details.svp_length)})` : ''}</span></div>
+        <div class="mtsp-kv"><span class="k">Holland Type:</span><span class="v">${escapeHtml(details.holland_title || 'n/a')}</span></div>
+        <div class="mtsp-kv"><span class="k">GOE:</span><span class="v">${escapeHtml(details.goe_ia || '')} ${escapeHtml(details.goe_ia_title || 'n/a')}</span></div>
+        <div class="mtsp-kv"><span class="k">OES:</span><span class="v">${escapeHtml(details.oes_code || '')} ${escapeHtml(details.oes_title || 'n/a')}</span></div>
+        <div class="mtsp-kv"><span class="k">SOC:</span><span class="v">${escapeHtml(details.soc_title || 'n/a')}</span></div>
+        <div class="mtsp-kv"><span class="k">Data Function:</span><span class="v">${escapeHtml(details.d_function || 'n/a')} (Level ${escapeHtml(details.data_level || 'n/a')})</span></div>
+        <div class="mtsp-kv"><span class="k">People Function:</span><span class="v">${escapeHtml(details.p_function || 'n/a')} (Level ${escapeHtml(details.people_level || 'n/a')})</span></div>
+        <div class="mtsp-kv"><span class="k">Things Function:</span><span class="v">${escapeHtml(details.t_function || 'n/a')} (Level ${escapeHtml(details.things_level || 'n/a')})</span></div>
+        <div class="mtsp-kv"><span class="k">Strength (PD1):</span><span class="v">${escapeHtml(formatPhysicalDemandP(resolveStrengthLevelFromVector(selected.trait_vector)))}</span></div>
+      </div>
+      <div class="mtsp-kv" style="margin-top:4px"><span class="k">Physical Demands:</span><span class="v">${escapeHtml(renderPhysicalDemandDetails(selected.trait_vector))}</span></div>
+      ${viprDesc ? `<p style="font-size:8.5pt;margin:6px 0 2px"><strong>Job Description:</strong> ${escapeHtml(viprDesc)}</p>` : ''}
+      ${altTitles.length ? `<p style="font-size:8pt;margin:2px 0"><strong>Alternate Titles:</strong> ${escapeHtml(altTitles.join(', '))}</p>` : ''}
+      ${education.length ? `<p style="font-size:8pt;margin:2px 0"><strong>Education Programs:</strong> ${escapeHtml(education.map((e) => e.cip90_title || e.caspar_title).filter(Boolean).join('; '))}</p>` : ''}
+
+      <div class="mtsp-section-title">Temperament Profile</div>
+      <table class="mtsp-table mtsp-summary-table" style="width:auto">
+        <thead><tr><th class="left">Temperament Factor</th><th>Required</th></tr></thead>
+        <tbody>${temRows}</tbody>
+      </table>
+
+      <div class="mtsp-section-title">BLS Wage Data (OES Crosswalk)</div>
+      <table class="mtsp-table mtsp-summary-table">
+        <thead>
+          <tr>
+            <th class="left">Area</th>
+            <th>Employment</th>
+            <th>Hourly Mean</th>
+            <th>Annual Mean</th>
+            <th>Annual Median</th>
+            <th>10th %ile</th>
+            <th>90th %ile</th>
+          </tr>
+        </thead>
+        <tbody>${wageRows}</tbody>
+      </table>
+      <p class="mtsp-note">Wage data sourced from US Bureau of Labor Statistics Occupational Employment and Wage Statistics (OES). OES/SOC code crosswalk via DOT occupation details.</p>
+      ${renderFooter('Page auto')}
+    </section>
+  `;
+}
+
 function renderMatchReportHtml(vm) {
   const report = vm.report;
   const selected = report.selected_job;
@@ -1501,6 +1752,8 @@ function renderTransferReportHtml(vm) {
       ${renderReport8Html(vm, dateLabel, evalueeName, matches)}
       ${renderReport9Html(vm, dateLabel, evalueeName, matches)}
       ${renderReport10Html(vm, dateLabel, evalueeName, matches)}
+      ${renderEducationTrainingHtml(vm, dateLabel, evalueeName, sourceJobs)}
+      ${renderSelectedJobDetailHtml(vm, dateLabel, evalueeName)}
     </div>
   `;
 }
@@ -1529,7 +1782,8 @@ export function buildReportViewModel(report, caseContext = {}) {
     tsp_levels: tspLevels,
     profile_traits: profileTraits,
     profile_values: profileValues,
-    case_context: normalizedCase
+    case_context: normalizedCase,
+    enrichment: safeReport.enrichment || {}
   };
 }
 
@@ -1662,15 +1916,22 @@ function renderTransferReportMarkdown(vm) {
 
   lines.push('## Report 5: Work History Job Demands / Worker Trait Requirements');
   lines.push('');
-  lines.push('| DOT | Job Title | VQ | SVP | P (PD1) | O*NET | Skill Level | Trait Vector |');
-  lines.push('| --- | --- | ---: | ---: | --- | --- | --- | --- |');
+  lines.push('| DOT | Job Title | VQ | SVP | P (PD1) | Holland | DPT | TEM | Skill Level | Trait Vector |');
+  lines.push('| --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- |');
   if (!sourceJobs.length) {
-    lines.push('| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |');
+    lines.push('| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |');
   } else {
     sourceJobs.forEach((row) => {
+      const details = row.occupation_details || {};
+      const dpt = [details.d_function, details.p_function, details.t_function].filter(Boolean).join('/') || 'n/a';
+      const tem = renderTemperamentSummary(row.temperaments);
       lines.push(
-        `| ${asMarkdownCell(row.dot_code)} | ${asMarkdownCell(row.title || 'Untitled')} | ${fmtDecimal(row.vq)} | ${fmtNumber(row.svp)} | ${asMarkdownCell(formatPhysicalDemandP(resolveStrengthLevelFromVector(row.trait_vector)))} | ${asMarkdownCell(row.onet_ou_code || '')} | ${deriveSkillLevelLabel(row.vq, row.svp)} | ${asMarkdownCell(row.trait_vector || '')} |`
+        `| ${asMarkdownCell(row.dot_code)} | ${asMarkdownCell(row.title || 'Untitled')} | ${fmtDecimal(row.vq)} | ${fmtNumber(row.svp)} | ${asMarkdownCell(formatPhysicalDemandP(resolveStrengthLevelFromVector(row.trait_vector)))} | ${asMarkdownCell(details.holland_title || 'n/a')} | ${asMarkdownCell(dpt)} | ${asMarkdownCell(tem)} | ${deriveSkillLevelLabel(row.vq, row.svp)} | ${asMarkdownCell(row.trait_vector || '')} |`
       );
+      if (Array.isArray(row.alternate_titles) && row.alternate_titles.length) {
+        lines.push(`|  | _Alt: ${asMarkdownCell(row.alternate_titles.slice(0, 5).join(', '))}_ | | | | | | | | |`);
+      }
+      lines.push(`|  | _PD: ${asMarkdownCell(renderPhysicalDemandDetails(row.trait_vector))}_ | | | | | | | | |`);
     });
   }
   lines.push('');
@@ -1753,17 +2014,26 @@ function renderTransferReportMarkdown(vm) {
     lines.push('No selected job.');
   } else {
     const signals = selected.signal_scores || {};
+    const selDetails = selected.occupation_details || {};
     lines.push(`- Title: ${selected.title}`);
     lines.push(`- DOT: ${selected.dot_code}`);
     lines.push(`- TSP (adjusted): ${fmtDecimal(selected.tsp_percent)}%`);
     lines.push(`- TSP (unadjusted): ${fmtDecimal(selected.tsp_percent_unadjusted)}%`);
     lines.push(`- VA adjustment: ${fmtDecimal(selected.va_adjustment_percent)}%`);
     lines.push(`- TSP Level: ${fmtNumber(selected.tsp_level)} (${selected.tsp_label || 'n/a'})`);
+    lines.push(`- Holland Type: ${selDetails.holland_title || 'n/a'}`);
+    lines.push(`- GOE: ${selDetails.goe_ia || ''} ${selDetails.goe_ia_title || 'n/a'}`);
+    lines.push(`- OES: ${selDetails.oes_code || ''} ${selDetails.oes_title || 'n/a'}`);
+    lines.push(`- SOC: ${selDetails.soc_title || 'n/a'}`);
+    lines.push(`- Data Function: ${selDetails.d_function || 'n/a'} (Level ${selDetails.data_level || 'n/a'})`);
+    lines.push(`- People Function: ${selDetails.p_function || 'n/a'} (Level ${selDetails.people_level || 'n/a'})`);
+    lines.push(`- Things Function: ${selDetails.t_function || 'n/a'} (Level ${selDetails.things_level || 'n/a'})`);
     lines.push(
       `- Physical demand (PD1): source ${formatPhysicalDemandP(selected.physical_demand_source_level ?? selected.strength_source_level)} -> target ${formatPhysicalDemandP(
         selected.physical_demand_target_level ?? selected.strength_target_level
       )} | profile ${formatPhysicalDemandP(selected.physical_demand_profile_level ?? selected.strength_profile_level)}`
     );
+    lines.push(`- Physical Demands Detail: ${renderPhysicalDemandDetails(selected.trait_vector)}`);
     lines.push(
       `- Physical-demand deficits (PD1-PD6): profile deficits ${fmtNumber(
         selected.physical_demand_profile_deficit_count
@@ -1772,11 +2042,78 @@ function renderTransferReportMarkdown(vm) {
     lines.push(`- Transfer Direction: ${selected.transfer_direction || 'n/a'}`);
     lines.push(`- Best Source DOT: ${selected.best_source_dot_code || 'n/a'}`);
     lines.push(`- Tier rule: ${selected.mtsp_tier_rule || 'n/a'}`);
+    lines.push(`- Temperaments: ${renderTemperamentSummary(selected.temperaments)}`);
     lines.push(
       `- Signal scores: DOT ${fmtDecimal(signals.dot_prefix, 3)}, O*NET ${fmtDecimal(signals.onet_prefix, 3)}, VQ ${fmtDecimal(signals.vq_proximity, 3)}, SVP ${fmtDecimal(signals.svp_proximity, 3)}, Core ${fmtDecimal(signals.tier_core_score, 3)}, Progress ${fmtDecimal(signals.in_tier_progress, 3)}`
     );
+    if (selected.vipr_job_description) {
+      lines.push(`- Job Description: ${selected.vipr_job_description}`);
+    }
+    if (Array.isArray(selected.alternate_titles) && selected.alternate_titles.length) {
+      lines.push(`- Alternate Titles: ${selected.alternate_titles.join(', ')}`);
+    }
+    if (Array.isArray(selected.education_programs) && selected.education_programs.length) {
+      lines.push(`- Education Programs: ${selected.education_programs.map((e) => e.cip90_title || e.caspar_title).filter(Boolean).join('; ')}`);
+    }
   }
   lines.push('');
+
+  /* ---- VIPR Personality Type ---- */
+  const viprPersonality = vm.enrichment?.vipr_personality;
+  if (viprPersonality) {
+    lines.push('## VIPR Personality Type');
+    lines.push('');
+    lines.push(`- Type: ${viprPersonality.personality_type} — ${viprPersonality.personality_name || 'n/a'}`);
+    lines.push(`- Description: ${viprPersonality.personality_description || 'n/a'}`);
+    lines.push('');
+  }
+
+  /* ---- ECLR Distribution ---- */
+  const eclrConstants = vm.enrichment?.eclr_constants;
+  if (Array.isArray(eclrConstants) && eclrConstants.length) {
+    const defaultRow = eclrConstants.find((r) => r.variant === 'default') || eclrConstants[0];
+    if (defaultRow) {
+      lines.push('## ECLR Distribution (Regression Constants)');
+      lines.push('');
+      lines.push('| Percentile | Coefficient 1 | Coefficient 2 |');
+      lines.push('| --- | ---: | ---: |');
+      lines.push(`| Mean | ${fmtDecimal(defaultRow.eclr_mean1, 5)} | ${fmtDecimal(defaultRow.eclr_mean2, 4)} |`);
+      lines.push(`| 10th %ile | ${fmtDecimal(defaultRow.eclr_10var1, 5)} | ${fmtDecimal(defaultRow.eclr_10var2, 4)} |`);
+      lines.push(`| 25th %ile | ${fmtDecimal(defaultRow.eclr_25var1, 5)} | ${fmtDecimal(defaultRow.eclr_25var2, 4)} |`);
+      lines.push(`| Median | ${fmtDecimal(defaultRow.eclr_median1, 5)} | ${fmtDecimal(defaultRow.eclr_median2, 4)} |`);
+      lines.push(`| 75th %ile | ${fmtDecimal(defaultRow.eclr_75var1, 5)} | ${fmtDecimal(defaultRow.eclr_75var2, 4)} |`);
+      lines.push(`| 90th %ile | ${fmtDecimal(defaultRow.eclr_90var1, 5)} | ${fmtDecimal(defaultRow.eclr_90var2, 4)} |`);
+      lines.push('');
+    }
+  }
+
+  /* ---- BLS Wage Data for Selected Job ---- */
+  const selectedJobWages = vm.enrichment?.selected_job_wages;
+  if (Array.isArray(selectedJobWages) && selectedJobWages.length) {
+    lines.push('## BLS Wage Data (OES Crosswalk)');
+    lines.push('');
+    lines.push('| Area | Employment | Hourly Mean | Annual Mean | Annual Median | 10th %ile | 90th %ile |');
+    lines.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: |');
+    selectedJobWages.forEach((w) => {
+      lines.push(`| ${asMarkdownCell(w.area_title || 'n/a')} | ${fmtNumber(w.tot_emp)} | $${fmtDecimal(w.h_mean, 2)} | $${fmtNumber(w.a_mean)} | $${fmtNumber(w.a_median)} | $${fmtNumber(w.a_pct10)} | $${fmtNumber(w.a_pct90)} |`);
+    });
+    lines.push('');
+  }
+
+  /* ---- Education/Training Programs ---- */
+  const jobsWithEd = sourceJobs.filter((r) => Array.isArray(r.education_programs) && r.education_programs.length > 0);
+  if (jobsWithEd.length) {
+    lines.push('## Education & Training Programs (CASPAR/CIP)');
+    lines.push('');
+    lines.push('| DOT | Job Title | CASPAR Program | CIP-90 Title | CIP Code |');
+    lines.push('| --- | --- | --- | --- | --- |');
+    jobsWithEd.forEach((job) => {
+      job.education_programs.forEach((ed) => {
+        lines.push(`| ${asMarkdownCell(job.dot_code)} | ${asMarkdownCell(job.title || 'Untitled')} | ${asMarkdownCell(ed.caspar_title || 'n/a')} | ${asMarkdownCell(ed.cip90_title || 'n/a')} | ${asMarkdownCell(ed.cip90 || 'n/a')} |`);
+      });
+    });
+    lines.push('');
+  }
 
   lines.push('## Methodology Notes');
   lines.push('');
